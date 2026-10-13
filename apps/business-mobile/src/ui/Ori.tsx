@@ -3,15 +3,11 @@ import Svg, { Circle, Ellipse, Path } from 'react-native-svg';
 import { colors } from './theme';
 
 /**
- * Ori, la mascota. ⚠️ ARTE PENDIENTE: Alberto entregará la ilustración final.
- *
- * Para usar el arte real:
- *   1. Guarda el PNG con fondo transparente en `assets/ori/ori.png` (idealmente @2x/@3x).
- *   2. Sustituye `ORI_ART = null` por `require('../../assets/ori/ori.png')`.
- * Mientras tanto se dibuja un marcador vectorial neutro (silueta marfil, visor azul
- * noche y órbita dorada) para no bloquear el diseño de pantallas.
+ * Ori, la mascota. Arte entregado por Alberto (13-oct-2026): `assets/ori/ori{,@2x,@3x}.png`,
+ * recortado a lienzo cuadrado con fondo transparente. Si `ORI_ART` se deja en null,
+ * se dibuja el marcador vectorial de respaldo.
  */
-const ORI_ART: ImageSourcePropType | null = null;
+const ORI_ART: ImageSourcePropType | null = require('../../assets/ori/ori.png');
 
 export function Ori({ size = 160, accessibilityLabel = 'Ori, la mascota de Orion' }: { size?: number; accessibilityLabel?: string }) {
   if (ORI_ART) {
