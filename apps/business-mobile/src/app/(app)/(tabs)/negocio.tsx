@@ -5,7 +5,6 @@ import { WhatsAppIcon } from '@/features/WhatsAppIcon';
 import { useProfile } from '@/lib/queries';
 import { useBusiness } from '@/lib/session';
 import {
-  AppHeader,
   Badge,
   Card,
   colors,
@@ -15,7 +14,6 @@ import {
   PageTitle,
   radius,
   Screen,
-  SimulationBanner,
   SkeletonList,
   spacing,
   Text,
@@ -31,18 +29,16 @@ export default function Negocio() {
   const missing = p?.setupChecklist.filter((i) => !i.done) ?? [];
 
   return (
-    <Screen onRefresh={() => profile.refetch()} refreshing={profile.isRefetching}>
-      <AppHeader />
-      <SimulationBanner />
+    <Screen tabTitle="Negocio" onRefresh={() => profile.refetch()} refreshing={profile.isRefetching}>
       <PageTitle title="Negocio" subtitle="Configura cómo funciona tu negocio." />
 
       <NightCard style={{ paddingVertical: spacing.lg }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg }}>
           <View style={styles.storeIcon}>
-            <Store size={40} color={colors.primary} />
+            <Store size={26} color={colors.primary} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text variant="heading" color={colors.textOnNight} style={{ fontSize: 24, lineHeight: 30 }} numberOfLines={2}>
+            <Text variant="heading" color={colors.textOnNight} numberOfLines={2}>
               {m.businessName}
             </Text>
             <Text variant="body" color={colors.textOnNightMuted}>
@@ -80,7 +76,7 @@ export default function Negocio() {
       <Section title="Conexiones">
         <View style={styles.connRow}>
           <View style={[styles.connIcon, { backgroundColor: colors.whatsappSoft }]}>
-            <WhatsAppIcon size={30} />
+            <WhatsAppIcon size={22} />
           </View>
           <View style={{ flex: 1 }}>
             <Text variant="subheading">WhatsApp</Text>
@@ -117,16 +113,16 @@ export default function Negocio() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View style={{ gap: spacing.md }}>
-      <Text variant="title" accessibilityRole="header">
+      <Text variant="heading" accessibilityRole="header">
         {title}
       </Text>
-      <Card style={{ paddingVertical: spacing.xs }}>{children}</Card>
+      <Card style={{ paddingVertical: 0 }}>{children}</Card>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  storeIcon: { width: 80, height: 80, borderRadius: radius.lg, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  storeIcon: { width: 52, height: 52, borderRadius: radius.lg, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
   profileBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -137,5 +133,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8DFA9',
   },
   connRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
-  connIcon: { width: 52, height: 52, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  connIcon: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
 });

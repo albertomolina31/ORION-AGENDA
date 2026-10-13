@@ -20,7 +20,7 @@ export function Badge({ label, tone = 'neutral', dot = true }: { label: string; 
   return (
     <View style={[styles.badge, { backgroundColor: t.bg }]} accessibilityLabel={label}>
       {dot ? <View style={[styles.dot, { backgroundColor: t.dot }]} /> : null}
-      <Text variant="captionStrong" color={t.fg} numberOfLines={1}>
+      <Text variant="micro" color={t.fg} numberOfLines={1}>
         {label}
       </Text>
     </View>
@@ -58,11 +58,11 @@ const styles = StyleSheet.create({
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs + 2,
+    gap: spacing.xs + 1,
     alignSelf: 'flex-start',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 1,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 4,
     borderRadius: radius.pill,
   },
-  dot: { width: 8, height: 8, borderRadius: 4 },
+  dot: { width: 6, height: 6, borderRadius: 3 },
 });

@@ -56,7 +56,7 @@ export default function ConfigureLoyalty() {
       <StepTitle n={1} title="Cómo se ganan sellos" />
       <Card>
         <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
-          <IconCircle icon={CalendarCheck} size={64} />
+          <IconCircle icon={CalendarCheck} size={44} />
           <View style={{ flex: 1 }}>
             <Text variant="subheading">1 sello por visita elegible</Text>
             <Text variant="caption" color={colors.textMuted}>
@@ -129,7 +129,7 @@ export default function ConfigureLoyalty() {
 
       <Card tone="muted">
         <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
-          <IconCircle icon={Star} tone="warning" size={60} />
+          <IconCircle icon={Star} tone="warning" size={44} />
           <View style={{ flex: 1, gap: 2 }}>
             <Text variant="subheading">Así lo verá el cliente</Text>
             <Text variant="body" color={colors.textMuted}>

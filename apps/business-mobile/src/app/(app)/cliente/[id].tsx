@@ -66,9 +66,9 @@ export default function CustomerDetail() {
       footer={canCreate ? <Button label="Agendar cita" icon={Plus} onPress={() => router.push(`/cita/nueva?customerId=${c.id}`)} /> : undefined}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg }}>
-        <Avatar initials={c.initials} size={96} colorKey="lavender" />
+        <Avatar initials={c.initials} size={72} colorKey="lavender" />
         <View style={{ flex: 1, gap: 2 }}>
-          <Text variant="title" style={{ fontSize: 30, lineHeight: 36 }}>
+          <Text variant="title">
             {c.name}
           </Text>
           <Text variant="body" color={colors.textMuted}>
@@ -83,7 +83,7 @@ export default function CustomerDetail() {
 
       <View style={styles.stats}>
         <View style={styles.stat}>
-          <IconCircle icon={CalendarDays} size={56} />
+          <IconCircle icon={CalendarDays} size={40} />
           <View>
             <Text variant="heading">{c.completedVisits}</Text>
             <Text variant="caption" color={colors.textMuted}>
@@ -93,7 +93,7 @@ export default function CustomerDetail() {
         </View>
         <View style={styles.vr} />
         <View style={styles.stat}>
-          <IconCircle icon={Clock} size={56} />
+          <IconCircle icon={Clock} size={40} />
           <Text variant="body" color={colors.textMuted} style={{ flexShrink: 1 }}>
             {c.lastVisitAt ? `Última visita · ${fmt.shortDay(c.lastVisitAt, tz)}` : 'Sin visitas aún'}
           </Text>
@@ -133,7 +133,7 @@ export default function CustomerDetail() {
       {m.features.loyalty ? (
         <Card onPress={() => router.push('/marketing')}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-            <IconCircle icon={Star} tone="warning" size={60} />
+            <IconCircle icon={Star} tone="warning" size={44} />
             <View style={{ flex: 1, gap: 4 }}>
               <Text variant="subheading">Fidelidad</Text>
               <Text variant="caption" color={colors.textMuted}>
@@ -162,7 +162,7 @@ export default function CustomerDetail() {
           ) : null}
           {c.history.slice(0, 6).map((h, i) => (
             <Pressable key={h.appointmentId} onPress={() => router.push(`/cita/${h.appointmentId}`)} accessibilityRole="button" style={[styles.histRow, i > 0 && styles.divider]}>
-              <IconCircle icon={CalendarDays} size={48} />
+              <IconCircle icon={CalendarDays} size={36} />
               <View style={{ flex: 1 }}>
                 <Text variant="bodyStrong">
                   {fmt.shortDay(h.startsAt, tz)} · {h.serviceName}
@@ -179,7 +179,7 @@ export default function CustomerDetail() {
 
       <Card>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-          <IconCircle icon={MessageCircle} size={56} />
+          <IconCircle icon={MessageCircle} size={40} />
           <View style={{ flex: 1 }}>
             <Text variant="subheading">Contacto y preferencias</Text>
             <Text variant="caption" color={colors.textMuted}>

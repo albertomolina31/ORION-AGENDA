@@ -6,7 +6,7 @@ export default function Notifications() {
   const m = useBusiness();
   return (
     <Screen header={<StackHeader title="Notificaciones" subtitle={m.businessName} />}>
-      <EmptyState title="Sin avisos por ahora" body="Aquí verás solicitudes nuevas, cambios y cancelaciones. Denegar notificaciones no impide usar la agenda." />
+      <EmptyState pose="calendar" title="Sin avisos por ahora" body="Aquí verás solicitudes nuevas, cambios y cancelaciones. Denegar notificaciones no impide usar la agenda." />
       <Note body="Por privacidad, los avisos en pantalla bloqueada no mostrarán nombres ni teléfonos de clientes." />
     </Screen>
   );

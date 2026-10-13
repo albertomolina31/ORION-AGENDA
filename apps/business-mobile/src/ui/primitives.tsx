@@ -1,5 +1,7 @@
 import { ChevronRight, type LucideIcon } from 'lucide-react-native';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { haptic, PressableScale } from './motion';
 import { Pressable, StyleSheet, Switch, TextInput, type TextInputProps, View } from 'react-native';
 import { Text } from './Text';
 import { colors, radius, spacing, touchTarget } from './theme';
@@ -53,7 +55,7 @@ export function SectionHeader({
   return (
     <View style={styles.sectionHeader}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexShrink: 1 }}>
-        <Text variant="title" accessibilityRole="header" numberOfLines={2} style={{ flexShrink: 1 }}>
+        <Text variant="heading" accessibilityRole="header" numberOfLines={2} style={{ flexShrink: 1 }}>
           {title}
         </Text>
         {trailing}
@@ -66,10 +68,10 @@ export function SectionHeader({
 export function LinkButton({ label, onPress, chevron = true }: { label: string; onPress: () => void; chevron?: boolean }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="link" hitSlop={10} style={styles.link}>
-      <Text variant="bodyStrong" color={colors.primary}>
+      <Text variant="captionStrong" color={colors.primary}>
         {label}
       </Text>
-      {chevron ? <ChevronRight size={18} color={colors.primary} /> : null}
+      {chevron ? <ChevronRight size={16} color={colors.primary} /> : null}
     </Pressable>
   );
 }
@@ -91,13 +93,17 @@ export function Chip({
   const bg = selected ? (dark ? colors.night : colors.primary) : colors.surface;
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        haptic.select();
+        onPress();
+      }}
+      hitSlop={4}
       accessibilityRole="button"
       accessibilityState={{ selected: !!selected }}
       style={[styles.chip, { backgroundColor: bg, borderColor: selected ? bg : colors.border }]}
     >
       {leading}
-      <Text variant="bodyStrong" color={selected ? colors.textOnPrimary : colors.text} numberOfLines={1}>
+      <Text variant="captionStrong" color={selected ? colors.textOnPrimary : colors.text} numberOfLines={1}>
         {label}
       </Text>
     </Pressable>
@@ -113,21 +119,33 @@ export function SegmentedControl<T extends string>({
   value: T;
   onChange: (v: T) => void;
 }) {
+  const [width, setWidth] = useState(0);
+  const index = Math.max(0, options.findIndex((o) => o.value === value));
+  const segW = width > 0 ? (width - 8 - 4 * (options.length - 1)) / options.length : 0;
+  const x = useSharedValue(0);
+  useEffect(() => {
+    x.value = withSpring(index * (segW + 4), { damping: 20, stiffness: 220 });
+  }, [index, segW, x]);
+  const indicator = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
   return (
-    <View style={styles.segmented} accessibilityRole="tablist">
+    <View style={styles.segmented} accessibilityRole="tablist" onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
+      {segW > 0 ? <Animated.View style={[styles.segIndicator, { width: segW }, indicator]} /> : null}
       {options.map((o) => {
         const active = o.value === value;
         const Icon = o.icon;
         return (
           <Pressable
             key={o.value}
-            onPress={() => onChange(o.value)}
+            onPress={() => {
+              haptic.select();
+              onChange(o.value);
+            }}
             accessibilityRole="tab"
             accessibilityState={{ selected: active }}
-            style={[styles.segment, active && styles.segmentActive]}
+            style={styles.segment}
           >
-            {Icon ? <Icon size={22} color={active ? colors.textOnPrimary : colors.primary} /> : null}
-            <Text variant="subheading" color={active ? colors.textOnPrimary : colors.primary}>
+            {Icon ? <Icon size={18} color={active ? colors.textOnPrimary : colors.primary} /> : null}
+            <Text variant="bodyStrong" color={active ? colors.textOnPrimary : colors.primary}>
               {o.label}
             </Text>
           </Pressable>
@@ -157,9 +175,9 @@ export function ListRow({
 }) {
   const content = (
     <View style={[styles.row, !last && styles.rowDivider]}>
-      {icon ? <IconCircle icon={icon} tone={iconTone} square size={52} /> : null}
+      {icon ? <IconCircle icon={icon} tone={iconTone} square size={40} /> : null}
       <View style={{ flex: 1, gap: 2 }}>
-        <Text variant="subheading">{title}</Text>
+        <Text variant="bodyStrong">{title}</Text>
         {subtitle ? (
           <Text variant="caption" color={colors.textMuted}>
             {subtitle}
@@ -167,14 +185,14 @@ export function ListRow({
         ) : null}
       </View>
       {accessory}
-      {onPress ? <ChevronRight size={22} color={colors.text} /> : null}
+      {onPress ? <ChevronRight size={18} color={colors.textSubtle} /> : null}
     </View>
   );
   if (!onPress) return content;
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => pressed && { opacity: 0.7 }}>
+    <PressableScale onPress={onPress} accessibilityRole="button" scaleTo={0.985}>
       {content}
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -278,7 +296,10 @@ export function RadioCard({
 }) {
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        haptic.select();
+        onPress();
+      }}
       accessibilityRole="radio"
       accessibilityState={{ checked: selected }}
       style={[styles.radioCard, selected && { borderColor: colors.primary, backgroundColor: colors.surfaceMuted }]}
@@ -286,7 +307,7 @@ export function RadioCard({
       <View style={[styles.radio, selected && { borderColor: colors.primary }]}>{selected ? <View style={styles.radioDot} /> : null}</View>
       {Icon ? (
         <View style={styles.radioIcon}>
-          <Icon size={28} color={colors.primary} />
+          <Icon size={22} color={colors.primary} />
         </View>
       ) : null}
       <View style={{ flex: 1, gap: 2 }}>
@@ -311,54 +332,65 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    minHeight: touchTarget,
-    paddingHorizontal: spacing.lg,
+    gap: spacing.xs + 2,
+    minHeight: 38,
+    paddingHorizontal: spacing.md + 2,
     borderRadius: radius.pill,
     borderWidth: 1,
   },
   segmented: {
     flexDirection: 'row',
     backgroundColor: colors.primarySoft,
-    borderRadius: radius.lg,
+    borderRadius: radius.md + 2,
     padding: 4,
     gap: 4,
+  },
+  segIndicator: {
+    position: 'absolute',
+    top: 4,
+    bottom: 4,
+    left: 4,
+    borderRadius: radius.md - 2,
+    backgroundColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
   segment: {
     flex: 1,
     flexDirection: 'row',
     gap: spacing.sm,
-    minHeight: touchTarget,
+    minHeight: 38,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.md,
   },
-  segmentActive: { backgroundColor: colors.primary },
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, paddingVertical: spacing.md, minHeight: 72 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm + 2, minHeight: 60 },
   rowDivider: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  note: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg, borderRadius: radius.lg, borderWidth: 1 },
+  note: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, paddingHorizontal: spacing.lg - 2, borderRadius: radius.md + 2, borderWidth: 1 },
   field: {
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.lg,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    gap: 2,
+    paddingVertical: spacing.sm + 2,
+    gap: 0,
   },
-  input: { fontSize: 18, color: colors.text, paddingVertical: 4, minHeight: 32 },
+  input: { fontSize: 16, color: colors.text, paddingVertical: 4, minHeight: 32 },
   toggle: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: touchTarget },
   radioCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.lg,
-    padding: spacing.lg,
+    padding: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 1.5,
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
-  radio: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: colors.textSubtle, alignItems: 'center', justifyContent: 'center' },
-  radioDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.primary },
-  radioIcon: { width: 64, height: 64, borderRadius: radius.md, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: colors.textSubtle, alignItems: 'center', justifyContent: 'center' },
+  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primary },
+  radioIcon: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
 });

@@ -8,7 +8,7 @@ import { useCustomers, useHome } from '@/lib/queries';
 import { useBusiness } from '@/lib/session';
 import { useRefreshOnFocus } from '@/lib/use-refresh-on-focus';
 import {
-  AppHeader,
+  Appear,
   Button,
   colors,
   EmptyState,
@@ -18,7 +18,6 @@ import {
   PageTitle,
   radius,
   Screen,
-  SimulationBanner,
   SkeletonList,
   spacing,
   Text,
@@ -67,19 +66,18 @@ export default function Clientes() {
 
   return (
     <Screen
+      tabTitle={isProfessional ? `Mis ${plural.toLowerCase()}` : plural}
       onRefresh={() => list.refetch()}
       refreshing={list.isRefetching}
       footer={m.permissions.includes('customers.manage') ? <Button label={`Nuevo ${singular}`} icon={Plus} onPress={() => router.push('/cliente/nuevo')} /> : undefined}
     >
-      <AppHeader />
-      <SimulationBanner />
       <PageTitle
         title={isProfessional ? `Mis ${plural.toLowerCase()}` : plural}
         subtitle={`Conoce a tus ${plural.toLowerCase()}. Cuida cada visita.`}
         trailing={
           counts ? (
             <View style={styles.countPill}>
-              <Text variant="heading" color={colors.primary}>
+              <Text variant="subheading" color={colors.primary}>
                 {counts.ALL}
               </Text>
             </View>
@@ -88,7 +86,7 @@ export default function Clientes() {
       />
 
       <View style={styles.search}>
-        <Search size={24} color={colors.textMuted} />
+        <Search size={20} color={colors.textMuted} />
         <TextInput
           value={q}
           onChangeText={setQ}
@@ -115,12 +113,12 @@ export default function Clientes() {
               style={[styles.segCard, active && styles.segActive]}
             >
               <View style={styles.segIcon}>
-                <Icon size={22} color={colors.primary} />
+                <Icon size={18} color={colors.primary} />
               </View>
-              <Text variant="bodyStrong" color={active ? colors.primary : colors.text} style={{ flex: 1 }}>
+              <Text variant="captionStrong" color={active ? colors.primary : colors.text} style={{ flex: 1 }}>
                 {s.label}
               </Text>
-              <ChevronRight size={20} color={colors.text} />
+              <ChevronRight size={16} color={colors.textSubtle} />
             </Pressable>
           );
         })}
@@ -129,7 +127,7 @@ export default function Clientes() {
       <View style={{ gap: spacing.md }}>
         <View style={styles.listHeader}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexShrink: 1 }}>
-            <Text variant="title" accessibilityRole="header">
+            <Text variant="heading" accessibilityRole="header">
               {title}
             </Text>
             {list.data && segment !== 'ALL' ? (
@@ -162,13 +160,15 @@ export default function Clientes() {
         {list.error && !list.data ? <ErrorState error={list.error} onRetry={() => list.refetch()} /> : null}
         {list.data?.items.length === 0 ? (
           <EmptyState
+            pose={debounced ? 'search' : 'sleep'}
             title={debounced ? 'Sin resultados' : 'Nadie en este grupo por ahora'}
             body={debounced ? `No encontramos "${debounced}". Revisa la ortografía o busca por teléfono.` : undefined}
-            withOri={!debounced}
           />
         ) : null}
-        {list.data?.items.map((c) => (
-          <CustomerCard key={c.id} customer={c} tz={m.timezone} today={today} variant={segment === 'FIRST_VISIT' ? 'firstVisit' : 'directory'} />
+        {list.data?.items.map((c, i) => (
+          <Appear key={c.id} index={i}>
+          <CustomerCard customer={c} tz={m.timezone} today={today} variant={segment === 'FIRST_VISIT' ? 'firstVisit' : 'directory'} />
+          </Appear>
         ))}
         {list.data && list.data.items.length > 0 ? (
           <View style={styles.pager}>
@@ -187,20 +187,20 @@ export default function Clientes() {
 }
 
 const styles = StyleSheet.create({
-  countPill: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.pill, backgroundColor: colors.primarySoft },
+  countPill: { paddingHorizontal: spacing.md, paddingVertical: 4, borderRadius: radius.pill, backgroundColor: colors.primarySoft },
   smallCount: { paddingHorizontal: spacing.md, paddingVertical: 2, borderRadius: radius.pill, backgroundColor: colors.primarySoft },
   search: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
     paddingHorizontal: spacing.lg,
-    minHeight: 64,
-    borderRadius: radius.lg,
+    minHeight: 46,
+    borderRadius: radius.md + 2,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
-  searchInput: { flex: 1, fontSize: 18, color: colors.text, paddingVertical: spacing.md },
+  searchInput: { flex: 1, fontSize: 16, color: colors.text, paddingVertical: spacing.sm },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   segCard: {
     flexBasis: '47%',
@@ -208,15 +208,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    padding: spacing.md,
-    minHeight: 80,
+    padding: spacing.sm + 2,
+    minHeight: 56,
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
   segActive: { backgroundColor: colors.primarySoft, borderColor: colors.primaryBorder },
-  segIcon: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  segIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
   listHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
   sort: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, minHeight: 44 },
   pager: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

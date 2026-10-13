@@ -20,10 +20,10 @@ export default function Pending() {
     <Screen header={<StackHeader title="Por aprobar" subtitle={m.businessName} />} onRefresh={() => q.refetch()} refreshing={q.isRefetching}>
       {q.isLoading || !today ? <SkeletonList rows={3} /> : null}
       {q.error ? <ErrorState error={q.error} onRetry={() => q.refetch()} /> : null}
-      {q.data && list.length === 0 ? <EmptyState title="Todo al día" body="No hay solicitudes pendientes de aprobación." /> : null}
+      {q.data && list.length === 0 ? <EmptyState pose="celebrate" title="Todo al día" body="No hay solicitudes pendientes de aprobación." /> : null}
       {list.map((a) => (
         <Pressable key={a.id} onPress={() => router.push(`/cita/${a.id}`)} accessibilityRole="button" style={styles.card}>
-          <IconCircle icon={Clock} tone="warning" size={52} />
+          <IconCircle icon={Clock} tone="warning" size={40} />
           <View style={{ flex: 1, gap: 2 }}>
             <Text variant="subheading">{a.customer.name}</Text>
             <Text variant="caption" color={colors.textMuted}>

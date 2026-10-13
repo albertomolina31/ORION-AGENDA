@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react-native';
 import { CalendarDays, House, Megaphone, Store, Users } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { haptic } from './motion';
 import { Text } from './Text';
 import { colors, radius, spacing } from './theme';
 
@@ -36,15 +37,16 @@ export function TabBar({ state, descriptors, navigation }: TabBarProps) {
             accessibilityState={{ selected: focused }}
             accessibilityLabel={label}
             onPress={() => {
+              haptic.select();
               const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
               if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
             }}
             style={styles.item}
           >
             <View style={[styles.pill, focused && styles.pillActive]}>
-              <Icon size={26} color={focused ? colors.primary : colors.textMuted} fill={focused ? colors.primary : 'transparent'} fillOpacity={focused ? 1 : 0} />
+              <Icon size={22} color={focused ? colors.primary : colors.textSubtle} strokeWidth={focused ? 2.4 : 2} />
             </View>
-            <Text variant="captionStrong" color={focused ? colors.primary : colors.textMuted} numberOfLines={1}>
+            <Text variant="micro" color={focused ? colors.primary : colors.textSubtle} numberOfLines={1}>
               {label}
             </Text>
           </Pressable>
@@ -58,13 +60,11 @@ const styles = StyleSheet.create({
   bar: {
     flexDirection: 'row',
     backgroundColor: colors.surface,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
+    paddingTop: spacing.xs + 2,
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
   },
-  item: { flex: 1, alignItems: 'center', gap: 2, minHeight: 56 },
-  pill: { paddingHorizontal: spacing.lg, paddingVertical: 4, borderRadius: radius.pill },
+  item: { flex: 1, alignItems: 'center', gap: 2, minHeight: 48 },
+  pill: { paddingHorizontal: spacing.md + 2, paddingVertical: 3, borderRadius: radius.pill },
   pillActive: { backgroundColor: colors.primarySoft },
 });

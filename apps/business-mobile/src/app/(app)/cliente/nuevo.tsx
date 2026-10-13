@@ -6,7 +6,7 @@ import { View } from 'react-native';
 import { endpoints } from '@/lib/endpoints';
 import { useIdempotentMutation } from '@/lib/mutations';
 import { useBusiness } from '@/lib/session';
-import { Button, Field, Note, Screen, spacing, StackHeader, Toggle } from '@/ui';
+import { Button, Field, Note, Screen, spacing, StackHeader, Toggle, useFeedback } from '@/ui';
 
 /** Alta de cliente. Validación local con el mismo esquema que el servidor (que vuelve a validar). */
 export default function NewCustomer() {
@@ -18,6 +18,7 @@ export default function NewCustomer() {
   const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [general, setGeneral] = useState<string | null>(null);
+  const feedback = useFeedback();
 
   const create = useIdempotentMutation(
     (body: Omit<CreateCustomerRequest, 'requestId'>, requestId) => endpoints.createCustomer(m.businessId, { ...body, requestId }),
@@ -42,7 +43,10 @@ export default function NewCustomer() {
     setErrors({});
     setGeneral(null);
     create.mutate(body, {
-      onSuccess: (c) => router.replace(`/cliente/${c.id}`),
+      onSuccess: (c) => {
+        feedback.toast(`${c.name} se agregó a tus ${m.vocabulary.customerPlural.toLowerCase()}`);
+        router.replace(`/cliente/${c.id}`);
+      },
       onError: (err) => {
         setErrors(err.fieldErrors ?? {});
         setGeneral(err.uncertain ? 'No sabemos si se guardó. Intenta de nuevo: no se duplicará.' : err.message);

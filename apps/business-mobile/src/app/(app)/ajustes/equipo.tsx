@@ -18,7 +18,7 @@ export default function Team() {
           <View key={p.id}>
             {i > 0 ? <Divider /> : null}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg }}>
-              <Avatar initials={p.initials} colorKey={p.colorKey} size={52} />
+              <Avatar initials={p.initials} colorKey={p.colorKey} size={40} />
               <View style={{ flex: 1, gap: 4 }}>
                 <Text variant="subheading">{p.name}</Text>
                 <Text variant="caption" color={colors.textMuted}>

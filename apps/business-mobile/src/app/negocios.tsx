@@ -39,7 +39,7 @@ export default function Negocios() {
               }}
               style={[styles.row, i > 0 && styles.divider]}
             >
-              <IconCircle icon={Store} square size={52} />
+              <IconCircle icon={Store} square size={40} />
               <View style={{ flex: 1 }}>
                 <Text variant="subheading">{m.businessName}</Text>
                 <Text variant="caption" color={colors.textMuted}>

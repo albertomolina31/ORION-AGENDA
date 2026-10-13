@@ -9,3 +9,6 @@ export * from './Ori';
 export * from './states';
 export * from './Stamps';
 export * from './layout';
+export * from './motion';
+export * from './feedback';
+export * from './ProgressRing';

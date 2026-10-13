@@ -11,6 +11,8 @@ export const HomeSummary = z.object({
   scheduledCount: z.number().int(),
   pendingApprovalCount: z.number().int(),
   confirmedCount: z.number().int(),
+  /** Citas de hoy ya atendidas (COMPLETED). */
+  completedCount: z.number().int(),
   activeProfessionals: z.number().int(),
   nextAppointment: Appointment.nullable(),
   whatsapp: Integration.nullable(),

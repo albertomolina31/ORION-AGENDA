@@ -20,7 +20,7 @@ export function Avatar({
       accessibilityElementsHidden
       importantForAccessibility="no"
     >
-      <Text variant={size >= 64 ? 'title' : size >= 44 ? 'heading' : 'captionStrong'} color={c.strong}>
+      <Text variant={size >= 64 ? 'title' : size >= 44 ? 'subheading' : size >= 34 ? 'captionStrong' : 'micro'} color={c.strong}>
         {initials}
       </Text>
     </View>

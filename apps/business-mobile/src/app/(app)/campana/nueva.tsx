@@ -31,6 +31,7 @@ import {
   StackHeader,
   Text,
   Toggle,
+  useFeedback,
 } from '@/ui';
 
 type Step = 1 | 2 | 3 | 4;
@@ -68,6 +69,7 @@ export default function NewCampaign() {
   const [sendTime, setSendTime] = useState('10:00');
   const [message, setMessage] = useState<{ tone: 'info' | 'warning'; text: string } | null>(null);
   const readOnly = params.view === '1';
+  const feedback = useFeedback();
 
   const existing = useQuery({ queryKey: ['campaign', m.businessId, params.id], queryFn: () => endpoints.campaign(m.businessId, params.id!), enabled: !!params.id });
   useEffect(() => {
@@ -125,7 +127,7 @@ export default function NewCampaign() {
     save.mutate(body(), {
       onSuccess: (c) => {
         setCampaignId(c.id);
-        setMessage({ tone: 'info', text: 'Borrador guardado.' });
+        feedback.toast('Borrador guardado');
         then?.(c.id);
       },
       onError: (e) => setMessage({ tone: 'warning', text: e.message }),
@@ -166,7 +168,10 @@ export default function NewCampaign() {
               icon={approved ? Check : Lock}
               disabled={!approved}
               loading={confirm.isPending}
-              onPress={() => persist((id) => confirm.mutate(id, { onSuccess: () => router.back(), onError: (e) => setMessage({ tone: 'warning', text: e.message }) }))}
+              onPress={() => persist((id) => confirm.mutate(id, { onSuccess: () => {
+                    feedback.celebrate('¡Campaña programada!');
+                    router.back();
+                  }, onError: (e) => setMessage({ tone: 'warning', text: e.message }) }))}
             />
             <Button label="Guardar borrador" variant="outline" loading={save.isPending} onPress={() => persist()} />
           </View>
@@ -196,7 +201,7 @@ export default function NewCampaign() {
           <Card>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg }}>
               <View style={styles.wa}>
-                <WhatsAppIcon size={34} />
+                <WhatsAppIcon size={24} />
               </View>
               <View>
                 <Text variant="caption" color={colors.textMuted}>
@@ -266,7 +271,7 @@ export default function NewCampaign() {
                 {preview.data ? (
                   <View style={{ gap: spacing.md }}>
                     <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: spacing.md }}>
-                      <Text variant="display" style={{ fontSize: 52, lineHeight: 58 }}>
+                      <Text variant="display">
                         {preview.data.matched}
                       </Text>
                       <Text variant="body">Coinciden con el segmento</Text>
@@ -456,11 +461,11 @@ function StepHeading({ n, title, subtitle }: { n: number; title: string; subtitl
       <Text variant="body" color={colors.textMuted}>
         Paso {n} de 4
       </Text>
-      <Text variant="display" style={{ fontSize: 32, lineHeight: 38 }}>
+      <Text variant="title">
         {title}
       </Text>
       {subtitle ? (
-        <Text variant="body" color={colors.textMuted} style={{ fontSize: 18 }}>
+        <Text variant="body" color={colors.textMuted}>
           {subtitle}
         </Text>
       ) : null}
@@ -472,7 +477,7 @@ function ReviewCard({ icon, title, onEdit, children }: { icon: typeof Users; tit
   return (
     <Card>
       <View style={{ flexDirection: 'row', gap: spacing.lg }}>
-        <IconCircle icon={icon} square size={60} />
+        <IconCircle icon={icon} square size={44} />
         <View style={{ flex: 1, gap: spacing.xs }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <Text variant="subheading">{title}</Text>
@@ -486,8 +491,8 @@ function ReviewCard({ icon, title, onEdit, children }: { icon: typeof Users; tit
 }
 
 const styles = StyleSheet.create({
-  dot: { width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: colors.primaryBorder, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface },
-  wa: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.whatsappSoft, alignItems: 'center', justifyContent: 'center' },
+  dot: { width: 38, height: 38, borderRadius: 19, borderWidth: 2, borderColor: colors.primaryBorder, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface },
+  wa: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.whatsappSoft, alignItems: 'center', justifyContent: 'center' },
   chatBg: { padding: spacing.xl, borderRadius: radius.lg, backgroundColor: '#EEF3EC' },
   bubble: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.sm, ...{ shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 } },
 });

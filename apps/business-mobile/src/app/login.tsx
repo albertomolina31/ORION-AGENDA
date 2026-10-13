@@ -40,7 +40,7 @@ export default function Login() {
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
         <View style={{ alignItems: 'center', gap: spacing.sm }}>
-          <Ori size={140} />
+          <Ori pose="wave" size={150} decorative={false} />
           <Text variant="display" align="center">
             Orion Business
           </Text>
@@ -69,7 +69,7 @@ export default function Login() {
                 accessibilityLabel={`Entrar como ${u.name}, ${u.description}`}
                 style={({ pressed }) => [styles.user, i > 0 && styles.divider, pressed && { backgroundColor: colors.surfaceMuted }]}
               >
-                <Avatar initials={u.name.charAt(0)} seed={u.name} size={48} />
+                <Avatar initials={u.name.charAt(0)} seed={u.name} size={40} />
                 <View style={{ flex: 1 }}>
                   <Text variant="subheading">{u.name}</Text>
                   <Text variant="caption" color={colors.textMuted}>

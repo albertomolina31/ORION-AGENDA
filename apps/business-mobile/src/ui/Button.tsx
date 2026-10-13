@@ -1,10 +1,17 @@
 import type { LucideIcon } from 'lucide-react-native';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { haptic } from './motion';
 import { Text } from './Text';
-import { colors, radius, spacing, touchTarget } from './theme';
+import { colors, radius, spacing } from './theme';
 
 type Variant = 'primary' | 'secondary' | 'outline' | 'destructive' | 'ghost';
 
+const DEPTH = 4;
+
+/**
+ * Botón con profundidad (inspirado en Duolingo): una cara inferior sólida que se
+ * "hunde" al presionar. Vibración ligera en dispositivos.
+ */
 export function Button({
   label,
   onPress,
@@ -26,55 +33,66 @@ export function Button({
   compact?: boolean;
   accessibilityHint?: string;
 }) {
-  const v = variants[variant];
-  const isDisabled = disabled || loading;
+  const isDisabled = !!(disabled || loading);
+  const v = isDisabled && variant === 'primary' ? disabledStyle : variants[variant];
+  const flat = variant === 'ghost';
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        haptic.tap();
+        onPress();
+      }}
       disabled={isDisabled}
       accessibilityRole="button"
-      accessibilityState={{ disabled: !!isDisabled, busy: !!loading }}
+      accessibilityState={{ disabled: isDisabled, busy: !!loading }}
       accessibilityHint={accessibilityHint}
-      style={({ pressed }) => [
-        styles.base,
-        compact && styles.compact,
-        { backgroundColor: isDisabled && variant === 'primary' ? colors.neutralSoft : v.bg, borderColor: v.border },
-        pressed && { opacity: 0.85 },
-      ]}
+      style={[styles.depth, { backgroundColor: flat ? 'transparent' : v.depth, paddingBottom: flat ? 0 : DEPTH }]}
     >
-      {loading ? (
-        <ActivityIndicator color={v.fg} />
-      ) : (
-        <View style={styles.row}>
-          {Icon ? <Icon size={20} color={isDisabled && variant === 'primary' ? colors.textSubtle : v.fg} /> : null}
-          <Text variant="subheading" color={isDisabled && variant === 'primary' ? colors.textSubtle : v.fg} style={styles.label}>
-            {label}
-          </Text>
-          {Trailing ? <Trailing size={20} color={isDisabled && variant === 'primary' ? colors.textSubtle : v.fg} /> : null}
+      {({ pressed }) => (
+        <View
+          style={[
+            styles.face,
+            compact && styles.compact,
+            { backgroundColor: v.bg, borderColor: v.border },
+            pressed && !flat && { transform: [{ translateY: DEPTH - 1 }] },
+          ]}
+        >
+          {loading ? (
+            <ActivityIndicator color={v.fg} />
+          ) : (
+            <View style={styles.row}>
+              {Icon ? <Icon size={19} color={v.fg} strokeWidth={2.4} /> : null}
+              <Text variant="subheading" color={v.fg}>
+                {label}
+              </Text>
+              {Trailing ? <Trailing size={19} color={v.fg} strokeWidth={2.4} /> : null}
+            </View>
+          )}
         </View>
       )}
     </Pressable>
   );
 }
 
-const variants: Record<Variant, { bg: string; fg: string; border: string }> = {
-  primary: { bg: colors.primary, fg: colors.textOnPrimary, border: 'transparent' },
-  secondary: { bg: colors.primarySoft, fg: colors.primary, border: 'transparent' },
-  outline: { bg: colors.surface, fg: colors.primary, border: colors.primary },
-  destructive: { bg: colors.surface, fg: colors.danger, border: colors.danger },
-  ghost: { bg: 'transparent', fg: colors.primary, border: 'transparent' },
+const variants: Record<Variant, { bg: string; fg: string; border: string; depth: string }> = {
+  primary: { bg: colors.primary, fg: colors.textOnPrimary, border: colors.primary, depth: colors.primaryDepth },
+  secondary: { bg: colors.primarySoft, fg: colors.primary, border: colors.primarySoft, depth: colors.primarySoftStrong },
+  outline: { bg: colors.surface, fg: colors.primary, border: colors.primaryBorder, depth: colors.primaryBorder },
+  destructive: { bg: colors.surface, fg: colors.danger, border: '#F2B8C0', depth: '#F2B8C0' },
+  ghost: { bg: 'transparent', fg: colors.primary, border: 'transparent', depth: 'transparent' },
 };
+const disabledStyle = { bg: colors.neutralSoft, fg: colors.textSubtle, border: colors.neutralSoft, depth: '#DCDAE3' };
 
 const styles = StyleSheet.create({
-  base: {
-    minHeight: 56,
+  depth: { borderRadius: radius.lg },
+  face: {
+    minHeight: 50,
     borderRadius: radius.lg,
     borderWidth: 1.5,
     paddingHorizontal: spacing.xl,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  compact: { minHeight: touchTarget, paddingHorizontal: spacing.lg },
+  compact: { minHeight: 42, paddingHorizontal: spacing.lg },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  label: { textAlign: 'center' },
 });

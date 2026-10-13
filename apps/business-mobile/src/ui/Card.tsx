@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { PressableScale } from './motion';
 import { colors, radius, shadow, spacing } from './theme';
 
 type Tone = 'default' | 'accent' | 'warning' | 'muted' | 'night';
@@ -30,18 +31,13 @@ export function Card({
   const base = [styles.card, toneStyle[tone], padded && styles.padded, style];
   if (!onPress) return <View style={base}>{children}</View>;
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-      style={({ pressed }) => [...base, pressed && { opacity: 0.85 }]}
-    >
+    <PressableScale onPress={onPress} accessibilityRole="button" accessibilityLabel={accessibilityLabel} style={base} scaleTo={0.98}>
       {children}
-    </Pressable>
+    </PressableScale>
   );
 }
 
 const styles = StyleSheet.create({
   card: { borderRadius: radius.lg, borderWidth: 1, ...shadow.card },
-  padded: { padding: spacing.lg },
+  padded: { padding: spacing.lg - 2 },
 });

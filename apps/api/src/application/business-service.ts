@@ -177,6 +177,7 @@ export class BusinessService {
       scheduledCount: pending.length + confirmed.length,
       pendingApprovalCount: allPending.length,
       confirmedCount: confirmed.length,
+      completedCount: agenda.appointments.filter((a) => a.status === 'COMPLETED').length,
       activeProfessionals: pros.filter((p) => p.active).length,
       nextAppointment: next && new Date(next.startsAt).getTime() < dayEnd ? next : null,
       whatsapp,

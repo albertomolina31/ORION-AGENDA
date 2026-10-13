@@ -49,6 +49,8 @@ export const colors = {
   textOnNightMuted: '#C9C6F2',
   primary: palette.violet,
   primaryPressed: palette.violetPressed,
+  /** Cara inferior del botón 3D (estilo Duolingo). */
+  primaryDepth: '#3B22C2',
   primarySoft: palette.lavender,
   primarySoftStrong: palette.lavenderStrong,
   primaryBorder: palette.lavenderBorder,
@@ -102,23 +104,35 @@ export const radius = {
   pill: 999,
 } as const;
 
-/** Texto base 16; títulos 24–28 (pantallas principales usan display). */
+/**
+ * Escala de app profesional (v2): títulos 22–30, texto base 15–16.
+ * La v1 copiaba las proporciones de los mockups y se veía "con zoom".
+ */
 export const typography = {
-  display: { fontSize: 34, lineHeight: 40, fontWeight: '800' },
-  title: { fontSize: 26, lineHeight: 32, fontWeight: '800' },
-  heading: { fontSize: 20, lineHeight: 26, fontWeight: '700' },
-  subheading: { fontSize: 17, lineHeight: 22, fontWeight: '700' },
-  body: { fontSize: 16, lineHeight: 22, fontWeight: '400' },
-  bodyStrong: { fontSize: 16, lineHeight: 22, fontWeight: '600' },
-  caption: { fontSize: 14, lineHeight: 19, fontWeight: '400' },
-  captionStrong: { fontSize: 14, lineHeight: 19, fontWeight: '600' },
-  micro: { fontSize: 12, lineHeight: 16, fontWeight: '500' },
+  display: { fontSize: 30, lineHeight: 36, fontWeight: '800' },
+  title: { fontSize: 22, lineHeight: 28, fontWeight: '800' },
+  heading: { fontSize: 18, lineHeight: 24, fontWeight: '700' },
+  subheading: { fontSize: 16, lineHeight: 21, fontWeight: '700' },
+  body: { fontSize: 15, lineHeight: 21, fontWeight: '400' },
+  bodyStrong: { fontSize: 15, lineHeight: 21, fontWeight: '600' },
+  caption: { fontSize: 13, lineHeight: 18, fontWeight: '400' },
+  captionStrong: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
+  micro: { fontSize: 11, lineHeight: 14, fontWeight: '600' },
+} as const;
+
+/** Familia tipográfica por peso (Plus Jakarta Sans). En Android cada peso es una familia. */
+export const fontFamilyByWeight = {
+  '400': 'PlusJakartaSans_400Regular',
+  '500': 'PlusJakartaSans_500Medium',
+  '600': 'PlusJakartaSans_600SemiBold',
+  '700': 'PlusJakartaSans_700Bold',
+  '800': 'PlusJakartaSans_800ExtraBold',
 } as const;
 
 export type TypographyVariant = keyof typeof typography;
 
-/** Área táctil objetivo 48 × 48 unidades lógicas. */
-export const touchTarget = 48;
+/** Área táctil mínima 44 × 44 (iOS HIG); los controles principales usan 48–52. */
+export const touchTarget = 44;
 
 export const shadow = {
   card: {
@@ -137,5 +151,5 @@ export const shadow = {
   },
 } as const;
 
-export const tokens = { colors, palette, professionalColors, spacing, radius, typography, touchTarget, shadow };
+export const tokens = { colors, palette, professionalColors, spacing, radius, typography, fontFamilyByWeight, touchTarget, shadow };
 export default tokens;

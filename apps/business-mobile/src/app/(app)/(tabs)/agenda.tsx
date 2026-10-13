@@ -3,13 +3,14 @@ import { router } from 'expo-router';
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock, Plus } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { AppointmentRow } from '@/features/AppointmentRow';
+import { AppointmentRow, FreeSlot, NowMarker } from '@/features/AppointmentRow';
 import { addDays, fmt, localDate, noonOf, startOfWeek } from '@/lib/format';
 import { useAgenda, useHome, useProfessionals } from '@/lib/queries';
 import { useBusiness } from '@/lib/session';
 import { useRefreshOnFocus } from '@/lib/use-refresh-on-focus';
+import Animated, { LinearTransition, ReduceMotion } from 'react-native-reanimated';
 import {
-  AppHeader,
+  Appear,
   Avatar,
   Button,
   Chip,
@@ -22,13 +23,14 @@ import {
   radius,
   Screen,
   SegmentedControl,
-  SimulationBanner,
   SkeletonList,
   spacing,
   Text,
+  haptic,
 } from '@/ui';
 
-const COLLAPSED_ROWS = 4;
+const COLLAPSED_ROWS = 8;
+const MIN_GAP_MIN = 30;
 const WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
 /** UI05 Agenda: lista por hora y filtro de profesional; sin columnas comprimidas en móvil. */
@@ -60,6 +62,7 @@ export default function Agenda() {
 
   return (
     <Screen
+      tabTitle={canSeeAll ? 'Agenda' : 'Mi agenda'}
       onRefresh={() => {
         void agenda.refetch();
         void home.refetch();
@@ -67,8 +70,6 @@ export default function Agenda() {
       refreshing={agenda.isRefetching}
       footer={canCreate ? <Button label="Nueva cita" icon={Plus} onPress={() => router.push(day ? `/cita/nueva?date=${day}` : '/cita/nueva')} /> : undefined}
     >
-      <AppHeader />
-      <SimulationBanner />
       <PageTitle
         title={canSeeAll ? 'Agenda' : 'Mi agenda'}
         trailing={
@@ -81,7 +82,7 @@ export default function Agenda() {
             accessibilityLabel="Ir a hoy"
             style={styles.todayBtn}
           >
-            <Text variant="subheading" color={colors.primary}>
+            <Text variant="captionStrong" color={colors.primary}>
               Hoy
             </Text>
           </Pressable>
@@ -89,16 +90,16 @@ export default function Agenda() {
       />
 
       {weekStart ? (
-        <NightCard style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.lg }}>
+        <NightCard style={{ paddingHorizontal: spacing.sm, paddingVertical: spacing.md }}>
           <View style={styles.monthRow}>
             <Pressable onPress={() => setSelected(addDays(day!, -7))} accessibilityRole="button" accessibilityLabel="Semana anterior" style={styles.arrow}>
-              <ChevronLeft size={28} color={colors.textOnNight} />
+              <ChevronLeft size={22} color={colors.textOnNight} />
             </Pressable>
-            <Text variant="heading" color={colors.textOnNight}>
+            <Text variant="subheading" color={colors.textOnNight}>
               {fmt.monthYear(noonOf(day!), 'UTC')}
             </Text>
             <Pressable onPress={() => setSelected(addDays(day!, 7))} accessibilityRole="button" accessibilityLabel="Semana siguiente" style={styles.arrow}>
-              <ChevronRight size={28} color={colors.textOnNight} />
+              <ChevronRight size={22} color={colors.textOnNight} />
             </Pressable>
           </View>
           <View style={styles.weekRow}>
@@ -109,6 +110,7 @@ export default function Agenda() {
                 <Pressable
                   key={d}
                   onPress={() => {
+                    haptic.select();
                     setSelected(d);
                     setExpanded(false);
                   }}
@@ -117,10 +119,10 @@ export default function Agenda() {
                   accessibilityLabel={fmt.longDay(noonOf(d), 'UTC')}
                   style={[styles.dayCell, active && styles.dayCellActive]}
                 >
-                  <Text variant="body" color={active ? colors.text : colors.textOnNightMuted}>
+                  <Text variant="micro" color={active ? colors.textMuted : colors.textOnNightMuted}>
                     {w}
                   </Text>
-                  <Text variant="heading" color={active ? colors.text : colors.textOnNight} style={{ fontSize: 22 }}>
+                  <Text variant="subheading" color={active ? colors.text : colors.textOnNight}>
                     {Number(d.slice(8))}
                   </Text>
                   {d === today && !active ? <View style={styles.todayDot} /> : null}
@@ -159,8 +161,8 @@ export default function Agenda() {
 
       {pendingCount > 0 && m.permissions.includes('appointments.approve') ? (
         <Pressable onPress={() => router.push('/pendientes')} accessibilityRole="button" style={styles.pending}>
-          <IconCircle icon={Clock} tone="warning" size={52} />
-          <Text variant="subheading" style={{ flex: 1 }}>
+          <IconCircle icon={Clock} tone="warning" size={32} />
+          <Text variant="bodyStrong" style={{ flex: 1 }}>
             {pendingCount} {pendingCount === 1 ? 'solicitud por aprobar' : 'solicitudes por aprobar'}
           </Text>
           <ChevronRight size={22} color={colors.text} />
@@ -173,7 +175,7 @@ export default function Agenda() {
       {agenda.data && mode === 'day' ? (
         <View style={{ gap: spacing.md }}>
           <View style={styles.dayHeader}>
-            <Text variant="title" accessibilityRole="header">
+            <Text variant="heading" accessibilityRole="header">
               {fmt.longDay(noonOf(day!), 'UTC')}
             </Text>
             <Text variant="body" color={colors.textMuted}>
@@ -181,21 +183,25 @@ export default function Agenda() {
             </Text>
           </View>
           {visible.length === 0 ? (
-            <EmptyState title="Sin citas este día" body={canCreate ? 'Agenda una cita o revisa otro día.' : 'Revisa otro día de la semana.'} />
+            <EmptyState pose="sleep" title="Sin citas este día" body={canCreate ? 'Agenda una cita o revisa otro día.' : 'Revisa otro día de la semana.'} />
           ) : (
-            <View style={{ gap: spacing.md }}>
-              {(expanded ? visible : visible.slice(0, COLLAPSED_ROWS)).map((a) => (
-                <AppointmentRow key={a.id} appt={a} />
-              ))}
+            <Animated.View style={{ gap: spacing.sm }} layout={LinearTransition.springify().damping(18).reduceMotion(ReduceMotion.System)}>
+              {timeline(expanded ? visible : visible.slice(0, COLLAPSED_ROWS), {
+                showNow: day === today ? (agenda.data?.generatedAt ?? null) : null,
+                showGaps: !!pro || !canSeeAll,
+                tz,
+                onBook: () => router.push(day ? `/cita/nueva?date=${day}` : '/cita/nueva'),
+                canCreate,
+              })}
               {visible.length > COLLAPSED_ROWS ? (
                 <Pressable onPress={() => setExpanded(!expanded)} accessibilityRole="button" style={styles.more}>
-                  <Text variant="bodyStrong" color={colors.primary}>
+                  <Text variant="captionStrong" color={colors.primary}>
                     {expanded ? 'Mostrar menos' : `${visible.length - COLLAPSED_ROWS} ${visible.length - COLLAPSED_ROWS === 1 ? 'cita más' : 'citas más'}`}
                   </Text>
-                  {expanded ? <ChevronUp size={20} color={colors.primary} /> : <ChevronDown size={20} color={colors.primary} />}
+                  {expanded ? <ChevronUp size={18} color={colors.primary} /> : <ChevronDown size={18} color={colors.primary} />}
                 </Pressable>
               ) : null}
-            </View>
+            </Animated.View>
           )}
         </View>
       ) : null}
@@ -213,6 +219,41 @@ export default function Agenda() {
       ) : null}
     </Screen>
   );
+}
+
+/** Construye la línea de tiempo: citas, marca de "ahora" y huecos libres (≥ 30 min). */
+function timeline(
+  list: Appointment[],
+  opts: { showNow: string | null; showGaps: boolean; tz: string; onBook: () => void; canCreate: boolean },
+) {
+  const out: React.ReactNode[] = [];
+  const now = opts.showNow ? new Date(opts.showNow).getTime() : null;
+  let nowPlaced = now === null;
+  list.forEach((a, i) => {
+    const start = new Date(a.startsAt).getTime();
+    if (!nowPlaced && now !== null && start > now) {
+      out.push(<NowMarker key="now" time={fmt.time(opts.showNow!, opts.tz)} />);
+      nowPlaced = true;
+    }
+    out.push(
+      <Appear key={a.id} index={i}>
+        <AppointmentRow appt={a} />
+      </Appear>,
+    );
+    const next = list[i + 1];
+    if (opts.showGaps && opts.canCreate && next) {
+      const end = new Date(a.endsAt).getTime();
+      const nextStart = new Date(next.startsAt).getTime();
+      const from = Math.max(end, now ?? 0);
+      if (nextStart - from >= MIN_GAP_MIN * 60_000) {
+        out.push(
+          <FreeSlot key={`gap-${a.id}`} from={fmt.time(new Date(from).toISOString(), opts.tz)} to={fmt.time(next.startsAt, opts.tz)} onPress={opts.onBook} />,
+        );
+      }
+    }
+  });
+  if (!nowPlaced && now !== null && list.length > 0) out.push(<NowMarker key="now" time={fmt.time(opts.showNow!, opts.tz)} />);
+  return out;
 }
 
 /** Semana resumida: conteos por día y citas compactas (sin cuadrícula multiprofesional). */
@@ -264,26 +305,27 @@ function WeekSummary({
 
 const styles = StyleSheet.create({
   todayBtn: {
-    minHeight: 52,
-    paddingHorizontal: spacing.xl,
+    minHeight: 36,
+    paddingHorizontal: spacing.lg,
     borderRadius: radius.pill,
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
-  arrow: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
+  monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.xs },
+  arrow: { width: 44, height: 40, alignItems: 'center', justifyContent: 'center' },
   weekRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 2 },
-  dayCell: { flex: 1, alignItems: 'center', paddingVertical: spacing.sm, borderRadius: radius.md, gap: 2, minHeight: 64 },
+  dayCell: { flex: 1, alignItems: 'center', paddingVertical: spacing.xs + 2, borderRadius: radius.md, gap: 0, minHeight: 50 },
   dayCellActive: { backgroundColor: '#F4F1FF' },
   todayDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.accent },
   chips: { flexDirection: 'row', gap: spacing.sm },
   pending: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.lg,
-    padding: spacing.md,
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     borderRadius: radius.lg,
     backgroundColor: colors.accentSoft,
     borderWidth: 1,

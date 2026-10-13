@@ -10,7 +10,7 @@ import { fmt, localDate, noonOf } from '@/lib/format';
 import { useIdempotentMutation } from '@/lib/mutations';
 import { useCustomers, useHome, useProfessionals, useServices } from '@/lib/queries';
 import { useBusiness } from '@/lib/session';
-import { Avatar, Button, Card, Chip, colors, Divider, LinkButton, Note, radius, Screen, spacing, StackHeader, Text } from '@/ui';
+import { Avatar, Button, Card, Chip, colors, Divider, haptic, LinkButton, Note, radius, Screen, spacing, StackHeader, Text, useFeedback } from '@/ui';
 
 type Step = 1 | 2 | 3 | 4;
 const steps = ['Cliente', 'Servicio', 'Horario', 'Resumen'];
@@ -29,6 +29,7 @@ export default function NewAppointment() {
   const [startsAt, setStartsAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const feedback = useFeedback();
 
   const preset = useQuery({
     queryKey: ['customer', m.businessId, params.customerId],
@@ -63,7 +64,10 @@ export default function NewAppointment() {
   const confirm = () => {
     setError(null);
     create.mutate(undefined, {
-      onSuccess: (appt) => router.replace(`/cita/${appt.id}`),
+      onSuccess: (appt) => {
+        feedback.toast(`Cita agendada para ${appt.customer.name}`);
+        router.replace(`/cita/${appt.id}`);
+      },
       onError: (err) => {
         if (err.code === 'SLOT_UNAVAILABLE') {
           setError('Ese horario ya no está disponible. Elige otro: actualizamos las opciones.');
@@ -98,7 +102,7 @@ export default function NewAppointment() {
 
       {step === 1 ? (
         <View style={{ gap: spacing.md }}>
-          <Text variant="title">¿Para quién es la cita?</Text>
+          <Text variant="heading">¿Para quién es la cita?</Text>
           <View style={styles.search}>
             <Search size={22} color={colors.textMuted} />
             <TextInput
@@ -106,7 +110,7 @@ export default function NewAppointment() {
               onChangeText={setSearch}
               placeholder="Buscar por nombre o teléfono"
               placeholderTextColor={colors.textSubtle}
-              style={{ flex: 1, fontSize: 18, color: colors.text, paddingVertical: spacing.md }}
+              style={{ flex: 1, fontSize: 16, color: colors.text, paddingVertical: spacing.md }}
               accessibilityLabel="Buscar cliente"
               autoFocus
             />
@@ -143,7 +147,7 @@ export default function NewAppointment() {
 
       {step === 2 ? (
         <View style={{ gap: spacing.lg }}>
-          <Text variant="title">Servicio y profesional</Text>
+          <Text variant="heading">Servicio y profesional</Text>
           <Text variant="body" color={colors.textMuted}>
             Para {customer?.name}
           </Text>
@@ -154,6 +158,7 @@ export default function NewAppointment() {
                 <Pressable
                   key={s.id}
                   onPress={() => {
+                    haptic.select();
                     setService(s);
                     setStartsAt(null);
                     if (proId && !s.professionalIds.includes(proId) && m.role !== 'PROFESSIONAL') setProId(null);
@@ -194,7 +199,7 @@ export default function NewAppointment() {
 
       {step === 3 && date ? (
         <View style={{ gap: spacing.lg }}>
-          <Text variant="title">Elige el horario</Text>
+          <Text variant="heading">Elige el horario</Text>
           <Text variant="body" color={colors.textMuted}>
             {service?.name} · {service?.durationMin} min · {proId ? enabledPros.find((p) => p.id === proId)?.name : 'Cualquiera disponible'}
           </Text>
@@ -220,7 +225,7 @@ export default function NewAppointment() {
 
       {step === 4 && customer && service && startsAt ? (
         <View style={{ gap: spacing.lg }}>
-          <Text variant="title">Revisa la cita</Text>
+          <Text variant="heading">Revisa la cita</Text>
           <Card tone="accent">
             <SummaryRow label="Cliente" value={customer.name} />
             <Divider />
@@ -288,8 +293,8 @@ const styles = StyleSheet.create({
   search: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
   option: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, minHeight: 64 },
   divider: { borderTopWidth: 1, borderTopColor: colors.border },
-  serviceRow: { flexDirection: 'row', alignItems: 'center', padding: spacing.lg, borderRadius: radius.lg, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.surface },
+  serviceRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.md, paddingHorizontal: spacing.lg, borderRadius: radius.lg, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.surface },
   serviceActive: { borderColor: colors.primary, backgroundColor: colors.surfaceMuted },
   stepper: { flexDirection: 'row', alignItems: 'flex-start' },
-  stepDot: { width: 40, height: 40, borderRadius: 20, borderWidth: 2, borderColor: colors.primaryBorder, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface },
+  stepDot: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, borderColor: colors.primaryBorder, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface },
 });

@@ -3,7 +3,7 @@ import { appointmentSourceLabel, appointmentStatusLabel } from '@orion/contracts
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ban, CalendarClock, Check, CircleCheck, Clock, UserX, X } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert, Platform, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { endpoints } from '@/lib/endpoints';
 import { fmt, noonOf, localDate } from '@/lib/format';
 import { useIdempotentMutation } from '@/lib/mutations';
@@ -17,7 +17,6 @@ import {
   colors,
   Divider,
   ErrorState,
-  Field,
   LoadingState,
   Note,
   Screen,
@@ -25,6 +24,7 @@ import {
   StackHeader,
   StatusBadge,
   Text,
+  useFeedback,
 } from '@/ui';
 
 type Action = Exclude<AppointmentAction, 'reschedule'>;
@@ -37,24 +37,13 @@ const actionCopy: Record<Action, { label: string; confirm: string; done: string 
   'no-show': { label: 'No asistió', confirm: '¿Registrar que la persona no asistió?', done: 'Ausencia registrada.' },
 };
 
-function confirmDialog(message: string): Promise<boolean> {
-  if (Platform.OS === 'web') return Promise.resolve(globalThis.confirm?.(message) ?? true);
-  return new Promise((resolve) =>
-    Alert.alert('Confirmar', message, [
-      { text: 'Volver', style: 'cancel', onPress: () => resolve(false) },
-      { text: 'Continuar', onPress: () => resolve(true) },
-    ]),
-  );
-}
-
 /** UI07 Detalle: estado, cliente, servicio, profesional, hora y origen; acciones según permisos y estado. */
 export default function AppointmentDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const m = useBusiness();
   const q = useAppointment(id);
   const [message, setMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
-  const [reason, setReason] = useState('');
-  const [needsReason, setNeedsReason] = useState<Action | null>(null);
+  const feedback = useFeedback();
 
   const mutation = useIdempotentMutation(
     ({ action, version, reason: r }: { action: Action; version: number; reason?: string }, requestId) =>
@@ -63,20 +52,31 @@ export default function AppointmentDetail() {
   );
 
   const a = q.data;
-  const run = async (action: Action) => {
+  const run = async (action: Action, requireReason = false) => {
     if (!a) return;
-    if (!(await confirmDialog(actionCopy[action].confirm))) return;
+    const answer = await feedback.confirm({
+      title: actionCopy[action].label,
+      message: requireReason ? `${actionCopy[action].confirm} Está fuera del plazo de la política: indica el motivo.` : actionCopy[action].confirm,
+      confirmLabel: actionCopy[action].label,
+      destructive: action === 'cancel' || action === 'reject' || action === 'no-show',
+      requireReason,
+      reasonLabel: 'Motivo de la excepción (obligatorio)',
+    });
+    if (!answer.confirmed) return;
     setMessage(null);
     mutation.mutate(
-      { action, version: a.version, reason: needsReason === action ? reason : undefined },
+      { action, version: a.version, reason: answer.reason },
       {
         onSuccess: () => {
-          setMessage({ tone: 'success', text: actionCopy[action].done });
-          setNeedsReason(null);
-          setReason('');
+          if (action === 'complete') feedback.celebrate('¡Visita completada!', `${a.customer.name} · ${a.service.name}`);
+          else feedback.toast(actionCopy[action].done);
         },
         onError: (err) => {
-          if (err.code === 'POLICY_VIOLATION' && err.details?.['requiresReason']) setNeedsReason(action);
+          if (err.code === 'POLICY_VIOLATION' && err.details?.['requiresReason']) {
+            mutation.resetKey();
+            void run(action, true);
+            return;
+          }
           if (err.code === 'STALE_VERSION') void q.refetch();
           setMessage({
             tone: 'error',
@@ -147,15 +147,6 @@ export default function AppointmentDetail() {
         <Note icon={message.tone === 'success' ? CircleCheck : X} tone={message.tone === 'success' ? 'info' : 'warning'} body={message.text} />
       ) : null}
 
-      {needsReason ? (
-        <Field
-          label="Motivo de la excepción (obligatorio)"
-          value={reason}
-          onChangeText={setReason}
-          placeholder="Ej. la persona avisó que está enferma"
-          hint="Queda registrado en el historial de la cita."
-        />
-      ) : null}
 
       <View style={{ gap: spacing.md }}>
         {can('approve') ? <Button label="Aprobar" icon={Check} onPress={() => run('approve')} loading={mutation.isPending} /> : null}
@@ -165,7 +156,7 @@ export default function AppointmentDetail() {
           <Button label="Reprogramar" icon={CalendarClock} variant="outline" onPress={() => router.push(`/cita/${a.id}/reprogramar`)} disabled={mutation.isPending} />
         ) : null}
         {can('no-show') ? <Button label="No asistió" icon={UserX} variant="outline" onPress={() => run('no-show')} disabled={mutation.isPending} /> : null}
-        {can('cancel') ? <Button label="Cancelar cita" icon={Ban} variant="destructive" onPress={() => run('cancel')} disabled={mutation.isPending || (needsReason === 'cancel' && !reason.trim())} /> : null}
+        {can('cancel') ? <Button label="Cancelar cita" icon={Ban} variant="destructive" onPress={() => run('cancel')} disabled={mutation.isPending} /> : null}
         {a.allowedActions.length === 0 ? (
           <Text variant="caption" color={colors.textMuted} align="center">
             {a.status === 'CONFIRMED' || a.status === 'PENDING_APPROVAL'
@@ -176,7 +167,7 @@ export default function AppointmentDetail() {
       </View>
 
       <View style={{ gap: spacing.sm }}>
-        <Text variant="heading">Historial</Text>
+        <Text variant="subheading">Historial</Text>
         <Card>
           {a.history.map((h, i) => (
             <View key={i} style={{ paddingVertical: spacing.sm, gap: 2 }}>

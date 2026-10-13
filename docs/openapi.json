@@ -1258,6 +1258,11 @@
                       "minimum": -9007199254740991,
                       "maximum": 9007199254740991
                     },
+                    "completedCount": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
                     "activeProfessionals": {
                       "type": "integer",
                       "minimum": -9007199254740991,
@@ -1562,6 +1567,7 @@
                     "scheduledCount",
                     "pendingApprovalCount",
                     "confirmedCount",
+                    "completedCount",
                     "activeProfessionals",
                     "nextAppointment",
                     "whatsapp",

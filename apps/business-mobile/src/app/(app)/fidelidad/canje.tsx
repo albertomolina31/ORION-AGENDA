@@ -16,6 +16,7 @@ import {
   EmptyState,
   ErrorState,
   IconCircle,
+  Ori,
   LinkButton,
   Note,
   radius,
@@ -24,6 +25,7 @@ import {
   spacing,
   StackHeader,
   Text,
+  useFeedback,
 } from '@/ui';
 
 /**
@@ -38,6 +40,7 @@ export default function Redeem() {
   const [picking, setPicking] = useState(false);
   const [done, setDone] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const feedback = useFeedback();
   const member = withReward.find((x) => x.id === selectedId) ?? withReward[0];
   const reward = member?.availableRewards.find((r) => r.status === 'AVAILABLE');
   const customer = useQuery({
@@ -65,7 +68,10 @@ export default function Redeem() {
               onPress={() => {
                 setError(null);
                 redeem.mutate(undefined, {
-                  onSuccess: (r) => setDone(r.redeemedAt),
+                  onSuccess: (r) => {
+                    setDone(r.redeemedAt);
+                    feedback.celebrate('¡Recompensa canjeada!', `${member!.customerName} · ${reward!.description}`);
+                  },
                   onError: (e) => setError(e.uncertain ? 'No sabemos si se registró el canje. Intenta de nuevo: no se duplicará.' : e.message),
                 });
               }}
@@ -76,7 +82,7 @@ export default function Redeem() {
       }
     >
       <View style={{ gap: 2 }}>
-        <Text variant="title">Revisa la recompensa</Text>
+        <Text variant="heading">Revisa la recompensa</Text>
         <Text variant="body" color={colors.textMuted}>
           Confirma los datos antes de utilizarla.
         </Text>
@@ -91,7 +97,7 @@ export default function Redeem() {
 
       {members.isLoading ? <SkeletonList rows={2} /> : null}
       {members.error ? <ErrorState error={members.error} onRetry={() => members.refetch()} /> : null}
-      {members.data && withReward.length === 0 ? <EmptyState title="Nadie tiene recompensas disponibles" body="Cuando un miembro complete su meta aparecerá aquí." /> : null}
+      {members.data && withReward.length === 0 ? <EmptyState pose="star" title="Nadie tiene recompensas disponibles" body="Cuando un miembro complete su meta aparecerá aquí." /> : null}
 
       {picking ? (
         <Card padded={false}>
@@ -117,7 +123,7 @@ export default function Redeem() {
         <>
           <Card>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg }}>
-              <Avatar initials={member.customerName.split(' ').map((w) => w[0]).slice(0, 2).join('')} colorKey="lavender" size={80} />
+              <Avatar initials={member.customerName.split(' ').map((w) => w[0]).slice(0, 2).join('')} colorKey="lavender" size={56} />
               <View style={{ flex: 1, gap: 2 }}>
                 <Text variant="heading">{member.customerName}</Text>
                 <Text variant="body" color={colors.textMuted}>
@@ -135,7 +141,7 @@ export default function Redeem() {
 
           <Card tone="warning">
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg }}>
-              <IconCircle icon={Star} tone="warning" size={64} />
+              <IconCircle icon={Star} tone="warning" size={44} />
               <View style={{ flex: 1 }}>
                 <Text variant="heading">{reward.description}</Text>
                 <Text variant="body">En un {(reward.serviceName ?? 'servicio').toLowerCase()}</Text>
@@ -152,7 +158,7 @@ export default function Redeem() {
 
           <Card>
             <View style={{ flexDirection: 'row', gap: spacing.lg }}>
-              <IconCircle icon={CalendarDays} size={56} />
+              <IconCircle icon={CalendarDays} size={40} />
               <View style={{ flex: 1, gap: 2 }}>
                 <Text variant="subheading">Aplicar en esta cita</Text>
                 {next ? (
@@ -175,7 +181,7 @@ export default function Redeem() {
 
           <Card>
             <View style={{ flexDirection: 'row', gap: spacing.lg }}>
-              <IconCircle icon={FileText} size={56} />
+              <IconCircle icon={FileText} size={40} />
               <View style={{ flex: 1, gap: spacing.sm }}>
                 <Text variant="subheading">Condiciones del beneficio</Text>
                 {[`Servicio elegible: ${(reward.serviceName ?? 'según programa').toLowerCase()}`, 'Un solo uso por recompensa', 'Vigencia verificada por el servidor'].map((t) => (

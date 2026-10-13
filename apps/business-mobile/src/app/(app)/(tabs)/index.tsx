@@ -1,33 +1,44 @@
+import type { HomeSummary } from '@orion/contracts';
 import { router } from 'expo-router';
-import { CalendarDays, CalendarX, ChevronRight, Clock, Plus, Users } from 'lucide-react-native';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { CalendarCheck, CalendarDays, CalendarX, ChevronRight, Clock, Plus, UserPlus } from 'lucide-react-native';
+import { StyleSheet, View } from 'react-native';
+import { WhatsAppIcon } from '@/features/WhatsAppIcon';
 import { fmt, noonOf } from '@/lib/format';
 import { useHome } from '@/lib/queries';
 import { useBusiness, useSession } from '@/lib/session';
 import { useRefreshOnFocus } from '@/lib/use-refresh-on-focus';
-import { WhatsAppIcon } from '@/features/WhatsAppIcon';
 import {
-  AppHeader,
+  AnimatedNumber,
+  Appear,
   Avatar,
   Badge,
   Card,
   colors,
   ErrorState,
   IconCircle,
-  LinkButton,
   NightCard,
   Ori,
+  type OriPose,
+  PressableScale,
+  ProgressRing,
   radius,
   Screen,
   SectionHeader,
   shadow,
-  SimulationBanner,
   SkeletonList,
   spacing,
-  Sparkle,
   StatusBadge,
   Text,
 } from '@/ui';
+
+/** Mensaje contextual de Ori: prioriza lo que requiere atención. */
+function oriMessage(h: HomeSummary): { pose: OriPose; text: string } {
+  if (h.pendingApprovalCount > 0)
+    return { pose: 'point', text: `${h.pendingApprovalCount} ${h.pendingApprovalCount === 1 ? 'solicitud espera' : 'solicitudes esperan'} tu respuesta.` };
+  if (h.nextAppointment) return { pose: 'calendar', text: `Tu próxima cita es a las ${fmt.time(h.nextAppointment.startsAt, h.timezone)}.` };
+  if (h.scheduledCount + h.completedCount > 0 && h.completedCount >= h.scheduledCount) return { pose: 'celebrate', text: '¡Día completo! Buen trabajo.' };
+  return { pose: 'sleep', text: 'Día tranquilo: no hay citas pendientes.' };
+}
 
 /** UI04 Inicio: resumen y atención inmediata. La operación detallada vive en Agenda. */
 export default function Inicio() {
@@ -37,93 +48,91 @@ export default function Inicio() {
   useRefreshOnFocus(home.refetch);
   const h = home.data;
   const canCreate = m.permissions.includes('appointments.manage_all') || m.permissions.includes('appointments.manage_own');
+  const ori = h ? oriMessage(h) : null;
+  const dayTotal = h ? h.scheduledCount + h.completedCount : 0;
 
   return (
-    <Screen onRefresh={() => home.refetch()} refreshing={home.isRefetching} header={null}>
-      <AppHeader />
-      <SimulationBanner />
-      <View style={{ gap: 2 }}>
-        <Text variant="display" style={{ fontSize: 40, lineHeight: 46 }} accessibilityRole="header">
-          ¡Hola, {me?.user.name}!
-        </Text>
-        <Text variant="body" color={colors.textMuted} style={{ fontSize: 19 }}>
+    <Screen tabTitle="Inicio" onRefresh={() => home.refetch()} refreshing={home.isRefetching}>
+      <Appear>
+        <Text variant="caption" color={colors.textMuted}>
           {h ? fmt.longDay(noonOf(h.date), 'UTC') : ' '}
         </Text>
-      </View>
+        <Text variant="display" accessibilityRole="header">
+          ¡Hola, {me?.user.name}!
+        </Text>
+      </Appear>
 
       {home.isLoading ? <SkeletonList rows={3} /> : null}
       {home.error && !h ? <ErrorState error={home.error} onRetry={() => home.refetch()} /> : null}
 
-      {h ? (
+      {h && ori ? (
         <>
-          <NightCard minHeight={200} style={{ paddingRight: 0 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ flex: 1, gap: spacing.sm }}>
-                <Text variant="title" color={colors.textOnNight} style={{ fontSize: 30, lineHeight: 34 }}>
-                  Tu día,{'\n'}en un vistazo
-                </Text>
-                <Text variant="body" color={colors.textOnNightMuted} style={{ fontSize: 19 }}>
-                  {h.scheduledCount === 0 ? 'Sin citas programadas' : `${h.scheduledCount} ${h.scheduledCount === 1 ? 'cita programada' : 'citas programadas'}`}
-                </Text>
-                <View style={styles.activePill}>
-                  <View style={styles.greenDot} />
-                  <Text variant="caption" color={colors.textOnNight}>
-                    {h.activeProfessionals} {h.activeProfessionals === 1 ? 'profesional activo' : 'profesionales activos'}
+          <Appear index={1}>
+            <NightCard style={{ paddingRight: spacing.sm }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+                <ProgressRing value={h.completedCount} total={dayTotal} onDark label="citas atendidas hoy" />
+                <View style={{ flex: 1, gap: 4 }}>
+                  <Text variant="heading" color={colors.textOnNight}>
+                    Tu día, en un vistazo
                   </Text>
+                  <Text variant="caption" color={colors.textOnNightMuted}>
+                    {h.completedCount} {h.completedCount === 1 ? 'atendida' : 'atendidas'} · {h.scheduledCount} por atender
+                  </Text>
+                  <View style={styles.activePill}>
+                    <View style={styles.greenDot} />
+                    <Text variant="micro" color={colors.textOnNight}>
+                      {h.activeProfessionals} {h.activeProfessionals === 1 ? 'profesional activo' : 'profesionales activos'}
+                    </Text>
+                  </View>
                 </View>
+                <Ori pose="wave" size={92} />
               </View>
-              <View style={{ marginRight: -8 }}>
-                <View style={{ position: 'absolute', top: 6, left: 0 }}>
-                  <Sparkle size={18} />
-                </View>
-                <Ori size={130} />
+              <View style={styles.oriBubble}>
+                <Text variant="captionStrong" color={colors.textOnNight}>
+                  {ori.text}
+                </Text>
               </View>
-            </View>
-          </NightCard>
+            </NightCard>
+          </Appear>
 
-          <View style={styles.statsRow}>
-            <StatCard
-              tone="warning"
-              icon={Clock}
-              value={h.pendingApprovalCount}
-              label="Por aprobar"
-              onPress={() => router.push('/pendientes')}
-            />
-            <StatCard tone="primary" icon={CalendarDays} value={h.confirmedCount} label="Confirmadas" onPress={() => router.push('/agenda')} />
-          </View>
+          <Appear index={2} style={styles.statsRow}>
+            <Stat tone="warning" icon={Clock} value={h.pendingApprovalCount} label="Por aprobar" onPress={() => router.push('/pendientes')} />
+            <Stat tone="primary" icon={CalendarDays} value={h.confirmedCount} label="Confirmadas" onPress={() => router.push('/agenda')} />
+            <Stat tone="success" icon={CalendarCheck} value={h.completedCount} label="Atendidas" onPress={() => router.push('/agenda')} />
+          </Appear>
 
-          <View style={{ gap: spacing.md }}>
+          <Appear index={3} style={{ gap: spacing.sm }}>
             <SectionHeader title="Próxima cita" actionLabel="Ver agenda" onAction={() => router.push('/agenda')} />
             {h.nextAppointment ? (
               <Card tone="accent" onPress={() => router.push(`/cita/${h.nextAppointment!.id}`)} accessibilityLabel={`Próxima cita: ${h.nextAppointment.customer.name}`}>
-                <View style={{ gap: spacing.xs }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text variant="body" color={colors.textMuted} style={{ fontSize: 18 }}>
-                      {fmt.range(h.nextAppointment.startsAt, h.nextAppointment.endsAt, h.timezone)}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+                  <View style={styles.timeBox}>
+                    <Text variant="heading" color={colors.primary}>
+                      {fmt.time(h.nextAppointment.startsAt, h.timezone)}
                     </Text>
-                    <StatusBadge status={h.nextAppointment.status} />
-                  </View>
-                  <Text variant="title">{h.nextAppointment.customer.name}</Text>
-                  <Text variant="body" color={colors.textMuted} style={{ fontSize: 18 }}>
-                    {h.nextAppointment.service.name}
-                  </Text>
-                  <View style={styles.nextFooter}>
-                    <Avatar initials={h.nextAppointment.professional.initials} colorKey={h.nextAppointment.professional.colorKey} size={52} />
-                    <Text variant="body" style={{ fontSize: 18 }}>
-                      Con {h.nextAppointment.professional.name}
-                    </Text>
-                    <View style={styles.vr} />
-                    <Text variant="body" style={{ fontSize: 18, flex: 1 }}>
+                    <Text variant="micro" color={colors.textMuted}>
                       {h.nextAppointment.service.durationMin} min
                     </Text>
-                    <ChevronRight size={22} color={colors.text} />
                   </View>
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <Text variant="subheading" numberOfLines={1}>
+                      {h.nextAppointment.customer.name}
+                    </Text>
+                    <Text variant="caption" color={colors.textMuted} numberOfLines={1}>
+                      {h.nextAppointment.service.name}
+                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: 2 }}>
+                      <Avatar initials={h.nextAppointment.professional.initials} colorKey={h.nextAppointment.professional.colorKey} size={22} />
+                      <Text variant="caption">Con {h.nextAppointment.professional.name}</Text>
+                    </View>
+                  </View>
+                  <StatusBadge status={h.nextAppointment.status} />
                 </View>
               </Card>
             ) : (
               <Card>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-                  <Ori size={72} />
+                  <Ori pose="sleep" size={60} />
                   <View style={{ flex: 1 }}>
                     <Text variant="subheading">No quedan citas por hoy</Text>
                     <Text variant="caption" color={colors.textMuted}>
@@ -133,97 +142,74 @@ export default function Inicio() {
                 </View>
               </Card>
             )}
-          </View>
+          </Appear>
 
-          <View style={{ gap: spacing.md }}>
+          <Appear index={4} style={{ gap: spacing.sm }}>
             <SectionHeader title="Accesos rápidos" />
             <View style={styles.quickRow}>
-              {canCreate ? <QuickTile icon={Plus} label="+ Nueva cita" onPress={() => router.push('/cita/nueva')} /> : null}
+              {canCreate ? <Quick icon={Plus} label="Nueva cita" primary onPress={() => router.push('/cita/nueva')} /> : null}
               {m.permissions.includes('customers.manage') ? (
-                <QuickTile icon={Users} label={`Nuevo ${m.vocabulary.customerSingular.toLowerCase()}`} onPress={() => router.push('/cliente/nuevo')} />
+                <Quick icon={UserPlus} label={`Nuevo ${m.vocabulary.customerSingular.toLowerCase()}`} onPress={() => router.push('/cliente/nuevo')} />
               ) : null}
-              {m.permissions.includes('schedules.manage') ? (
-                <QuickTile icon={CalendarX} label="Bloquear horario" onPress={() => router.push('/ajustes/horarios')} />
-              ) : null}
+              {m.permissions.includes('schedules.manage') ? <Quick icon={CalendarX} label="Bloquear horario" onPress={() => router.push('/ajustes/horarios')} /> : null}
             </View>
-          </View>
+          </Appear>
 
           {h.whatsapp ? (
-            <Card onPress={m.permissions.includes('business.configure') ? () => router.push('/negocio') : undefined}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg }}>
-                <View style={styles.waCircle}>
-                  <WhatsAppIcon size={34} />
+            <Appear index={5}>
+              <Card onPress={m.permissions.includes('business.configure') ? () => router.push('/negocio') : undefined}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+                  <View style={styles.waCircle}>
+                    <WhatsAppIcon size={24} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text variant="bodyStrong">{h.whatsapp.status === 'CONNECTED' ? 'WhatsApp conectado' : 'WhatsApp sin conectar'}</Text>
+                    <Text variant="caption" color={colors.textMuted}>
+                      {h.whatsapp.status === 'CONNECTED' ? 'Las reservas llegan a tu agenda' : 'La agenda manual sigue operativa'}
+                    </Text>
+                  </View>
+                  {h.whatsapp.status !== 'CONNECTED' ? <Badge label={h.whatsapp.statusLabel} tone="warning" /> : null}
+                  <ChevronRight size={18} color={colors.textSubtle} />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text variant="subheading">{h.whatsapp.status === 'CONNECTED' ? 'WhatsApp conectado' : 'WhatsApp sin conectar'}</Text>
-                  <Text variant="caption" color={colors.textMuted}>
-                    {h.whatsapp.status === 'CONNECTED' ? 'Las reservas llegan a tu agenda' : 'La agenda manual sigue operativa'}
-                  </Text>
-                </View>
-                {h.whatsapp.status !== 'CONNECTED' ? <Badge label={h.whatsapp.statusLabel} tone="warning" /> : null}
-                <ChevronRight size={22} color={colors.text} />
-              </View>
-            </Card>
+              </Card>
+            </Appear>
           ) : null}
 
           <Text variant="micro" color={colors.textSubtle} align="center">
-            Actualizado a las {fmt.time(h.generatedAt, h.timezone)} · hora de {h.timezone}
+            Actualizado {fmt.time(h.generatedAt, h.timezone)} · hora de {h.timezone}
+            {home.error ? ' · no se pudo actualizar' : ''}
           </Text>
-          {home.error ? <LinkButton label="Datos desactualizados · Reintentar" onPress={() => home.refetch()} /> : null}
         </>
       ) : null}
     </Screen>
   );
 }
 
-function StatCard({
-  icon,
-  value,
-  label,
-  onPress,
-  tone,
-}: {
-  icon: typeof Clock;
-  value: number;
-  label: string;
-  onPress: () => void;
-  tone: 'warning' | 'primary';
-}) {
+function Stat({ icon, value, label, onPress, tone }: { icon: typeof Clock; value: number; label: string; onPress: () => void; tone: 'warning' | 'primary' | 'success' }) {
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${value} ${label}`}
-      style={({ pressed }) => [
-        styles.stat,
-        tone === 'warning' ? { backgroundColor: colors.accentSoft, borderColor: colors.accentBorder } : null,
-        pressed && { opacity: 0.85 },
-      ]}
+      style={[styles.stat, tone === 'warning' && value > 0 ? { backgroundColor: colors.accentSoft, borderColor: colors.accentBorder } : null]}
     >
-      <IconCircle icon={icon} tone={tone} size={48} />
-      <View style={{ flex: 1 }}>
-        <Text variant="display" style={{ fontSize: 32, lineHeight: 36 }}>
-          {value}
-        </Text>
-        <Text variant="body" numberOfLines={2}>
-          {label}
-        </Text>
-      </View>
-      <ChevronRight size={20} color={colors.text} />
-    </Pressable>
+      <IconCircle icon={icon} tone={tone} size={34} />
+      <AnimatedNumber value={value} variant="title" />
+      <Text variant="caption" color={colors.textMuted} numberOfLines={1}>
+        {label}
+      </Text>
+    </PressableScale>
   );
 }
 
-function QuickTile({ icon: Icon, label, onPress }: { icon: typeof Plus; label: string; onPress: () => void }) {
+function Quick({ icon: Icon, label, onPress, primary }: { icon: typeof Plus; label: string; onPress: () => void; primary?: boolean }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => [styles.quick, pressed && { opacity: 0.85 }]}>
-      <View style={styles.quickIcon}>
-        <Icon size={30} color={colors.primary} />
-      </View>
-      <Text variant="bodyStrong" align="center">
+    <PressableScale onPress={onPress} accessibilityRole="button" style={[styles.quick, primary && { backgroundColor: colors.primary, borderColor: colors.primary }]}>
+      <Icon size={22} color={primary ? colors.textOnPrimary : colors.primary} strokeWidth={2.3} />
+      <Text variant="captionStrong" align="center" color={primary ? colors.textOnPrimary : colors.text} numberOfLines={2}>
         {label}
       </Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -231,51 +217,49 @@ const styles = StyleSheet.create({
   activePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: 6,
     alignSelf: 'flex-start',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 4,
     borderRadius: radius.pill,
     backgroundColor: 'rgba(255,255,255,0.12)',
-    marginTop: spacing.xs,
+    marginTop: 2,
   },
-  greenDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#8FE3A0' },
-  statsRow: { flexDirection: 'row', gap: spacing.md },
+  greenDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#8FE3A0' },
+  oriBubble: {
+    marginTop: spacing.md,
+    marginRight: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  statsRow: { flexDirection: 'row', gap: spacing.sm },
   stat: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    padding: spacing.lg,
+    gap: 2,
+    padding: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
     ...shadow.card,
   },
-  nextFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.primarySoftStrong,
-  },
-  vr: { width: 1, height: 28, backgroundColor: colors.primarySoftStrong },
-  quickRow: { flexDirection: 'row', gap: spacing.md },
+  timeBox: { width: 64, height: 56, borderRadius: radius.md, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
+  quickRow: { flexDirection: 'row', gap: spacing.sm },
   quick: {
     flex: 1,
     alignItems: 'center',
-    gap: spacing.md,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.sm,
+    gap: spacing.xs + 2,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xs,
     borderRadius: radius.lg,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     ...shadow.card,
   },
-  quickIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
-  waCircle: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.whatsappSoft, alignItems: 'center', justifyContent: 'center' },
+  waCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.whatsappSoft, alignItems: 'center', justifyContent: 'center' },
 });

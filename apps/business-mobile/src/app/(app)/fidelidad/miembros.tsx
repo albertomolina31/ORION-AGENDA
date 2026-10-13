@@ -12,7 +12,7 @@ export default function Members() {
     <Screen header={<StackHeader title="Miembros" subtitle="Programa de fidelidad" />} onRefresh={() => q.refetch()} refreshing={q.isRefetching}>
       {q.isLoading ? <SkeletonList rows={4} /> : null}
       {q.error ? <ErrorState error={q.error} onRetry={() => q.refetch()} /> : null}
-      {q.data?.length === 0 ? <EmptyState title="Aún no hay miembros" body="La afiliación requiere consentimiento; no se inscribe automáticamente." /> : null}
+      {q.data?.length === 0 ? <EmptyState pose="star" title="Aún no hay miembros" body="La afiliación requiere consentimiento; no se inscribe automáticamente." /> : null}
       <Card padded={false}>
         {q.data?.map((mb, i) => (
           <Pressable

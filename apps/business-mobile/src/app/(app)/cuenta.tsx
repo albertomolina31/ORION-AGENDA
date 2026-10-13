@@ -11,7 +11,7 @@ export default function Account() {
     <Screen header={<StackHeader title="Tu cuenta" />}>
       <Card>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg }}>
-          <Avatar initials={me?.user.name.charAt(0) ?? '?'} colorKey="lavender" size={72} />
+          <Avatar initials={me?.user.name.charAt(0) ?? '?'} colorKey="lavender" size={48} />
           <View style={{ flex: 1 }}>
             <Text variant="heading">{me?.user.name}</Text>
             <Text variant="body" color={colors.textMuted}>
