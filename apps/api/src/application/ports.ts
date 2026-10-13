@@ -3,7 +3,9 @@ import type {
   AppointmentHistoryEntry,
   Business,
   CalendarOccupancy,
+  ConsentRecord,
   Customer,
+  PrivacyRequestRecord,
   IdempotencyRecord,
   Membership,
   NotificationRead,
@@ -76,6 +78,15 @@ export interface CustomerRepository {
   list(businessId: string): Promise<Customer[]>;
   get(businessId: string, id: string): Promise<Customer | undefined>;
   insert(customer: Customer): Promise<void>;
+  update(customer: Customer): Promise<void>;
+}
+
+export interface PrivacyRepository {
+  consentHistory(businessId: string, customerId?: string): Promise<ConsentRecord[]>;
+  appendConsent(r: ConsentRecord): Promise<void>;
+  listRequests(businessId: string): Promise<PrivacyRequestRecord[]>;
+  getRequest(businessId: string, id: string): Promise<PrivacyRequestRecord | undefined>;
+  saveRequest(r: PrivacyRequestRecord): Promise<void>;
 }
 
 export interface AppointmentRepository {
@@ -128,6 +139,7 @@ export interface Repositories {
   scheduleWriter: ScheduleWriter;
   notificationReads: NotificationReadStore;
   customers: CustomerRepository;
+  privacy: PrivacyRepository;
   appointments: AppointmentRepository;
   occupancies: OccupancyRepository;
   history: HistoryRepository;

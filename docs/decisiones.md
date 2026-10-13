@@ -51,6 +51,15 @@ Pantallas adicionales del inventario: detalle de cita y acciones (UI07), nueva c
 - Pantalla *Negocio → Widgets* con vista previa de datos reales; deep link `orionbusiness://agenda?fecha=`.
 - Los widgets no admiten animación continua: Ori cambia de pose; en iOS hay transiciones de contenido y cuenta regresiva. Detalle en `widgets-plan.md`; cómo compilarlos y verlos en `emuladores.md` (iOS: `expo-widgets`, oficial de Expo).
 
+## Iteración 13-oct-2026: privacidad y datos (sección 14)
+
+- **Consentimiento promocional con historial:** cada alta o baja registra fecha, persona, origen y constancia (obligatoria al otorgar). Recepción puede registrarlo (`customers.manage`); un profesional no.
+- **Solicitudes de derechos** (acceso, rectificación, cancelación, oposición) con canal, días abiertos, historial y respuesta obligatoria al atender o rechazar. Permiso nuevo `privacy.manage` (dueño y administración).
+- **Oposición atendida** registra la baja promocional automáticamente; sigue recibiendo avisos operativos.
+- **Exportación** de datos del cliente (`orion.customer-export.v1`): contacto, consentimientos, citas con importes y solicitudes.
+- **Eliminación = anonimización:** se borran nombre, teléfono, correo y notas; se conservan citas, importes y sellos como "Cliente eliminado". Se rechaza si hay citas próximas y exige escribir el nombre para confirmar. Una cancelación no se puede dar por atendida hasta eliminar los datos.
+- **No se inventan plazos legales ni retención:** la pantalla lista las políticas pendientes de revisión especializada antes del piloto.
+
 ## Siguiente bloque sugerido
 
 1. Retomar D09: esquema PostgreSQL, migraciones y pruebas de concurrencia reales (P09, P22).

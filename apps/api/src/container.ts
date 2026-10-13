@@ -8,6 +8,7 @@ import { IdempotencyService } from './application/idempotency-service.js';
 import { LoyaltySimulation } from './application/loyalty-simulation.js';
 import { NotificationService } from './application/notification-service.js';
 import { OutboxDispatcher } from './application/outbox-dispatcher.js';
+import { PrivacyService } from './application/privacy-service.js';
 import type { Repositories } from './application/ports.js';
 import type { Clock } from './domain/clock.js';
 import type { IdGenerator } from './domain/ids.js';
@@ -33,6 +34,7 @@ export interface OrionContainer {
   config: ConfigService;
   settings: BusinessSettingsService;
   notifications: NotificationService;
+  privacy: PrivacyService;
   outbox: OutboxDispatcher;
 }
 
@@ -62,6 +64,7 @@ export function createSimulationContainer(clock: Clock, ids: IdGenerator, seedAt
     config: new ConfigService(repos, clock, ids, idempotency),
     settings: new BusinessSettingsService(repos, clock, idempotency, (a) => business.profile(a)),
     notifications: new NotificationService(repos, db, clock),
+    privacy: new PrivacyService(repos, clock, ids, idempotency, (a, id) => customers.get(a, id)),
     outbox,
   };
 }

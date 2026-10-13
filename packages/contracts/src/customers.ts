@@ -46,6 +46,36 @@ export type CustomerListResponse = z.infer<typeof CustomerListResponse>;
 export const ConsentStatus = z.enum(['GRANTED', 'NOT_GRANTED', 'REVOKED']);
 export type ConsentStatus = z.infer<typeof ConsentStatus>;
 
+export const ConsentSource = z.enum(['STAFF_APP', 'WHATSAPP', 'CUSTOMER_REQUEST', 'SYSTEM']);
+export type ConsentSource = z.infer<typeof ConsentSource>;
+
+export const CONSENT_SOURCE_LABELS: Record<ConsentSource, string> = {
+  STAFF_APP: 'Registrado por el equipo',
+  WHATSAPP: 'Por WhatsApp',
+  CUSTOMER_REQUEST: 'Solicitud del cliente',
+  SYSTEM: 'Automático',
+};
+
+export const CONSENT_STATUS_LABELS: Record<ConsentStatus, string> = {
+  GRANTED: 'Acepta promociones',
+  NOT_GRANTED: 'Sin permiso',
+  REVOKED: 'Se dio de baja',
+};
+
+export const ConsentEvent = z.object({
+  id: Id,
+  at: IsoDateTime,
+  status: ConsentStatus,
+  statusLabel: z.string(),
+  source: ConsentSource,
+  sourceLabel: z.string(),
+  actorName: z.string(),
+  /** Cómo se obtuvo (p. ej. "Lo aceptó en mostrador"). Obligatorio al otorgar. */
+  evidence: z.string().nullable(),
+});
+export type ConsentEvent = z.infer<typeof ConsentEvent>;
+
+
 export const CustomerDetail = CustomerSummary.extend({
   phone: z.string().nullable(),
   email: z.string().nullable(),
@@ -64,6 +94,10 @@ export const CustomerDetail = CustomerSummary.extend({
     }),
   ),
   possibleDuplicates: z.array(z.object({ id: Id, name: z.string() })),
+  /** Historial de consentimiento promocional (más reciente primero). Solo con customers.view_all. */
+  consentHistory: z.array(ConsentEvent),
+  /** Datos personales eliminados por solicitud; se conservan citas sin identificar a la persona. */
+  anonymized: z.boolean(),
 });
 export type CustomerDetail = z.infer<typeof CustomerDetail>;
 

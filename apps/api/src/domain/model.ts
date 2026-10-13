@@ -110,6 +110,35 @@ export interface Customer {
   preferredProfessionalId: string | null;
   promotionalConsent: ConsentStatus;
   createdAt: Date;
+  /** Datos personales eliminados por solicitud (las citas se conservan sin identificar). */
+  anonymizedAt?: Date | null;
+}
+
+/** Cada cambio de consentimiento promocional queda registrado (sección 14). */
+export interface ConsentRecord {
+  id: string;
+  businessId: string;
+  customerId: string;
+  status: ConsentStatus;
+  source: 'STAFF_APP' | 'WHATSAPP' | 'CUSTOMER_REQUEST' | 'SYSTEM';
+  actorId: string;
+  actorName: string;
+  evidence: string | null;
+  at: Date;
+}
+
+export interface PrivacyRequestRecord {
+  id: string;
+  businessId: string;
+  customerId: string;
+  type: 'ACCESS' | 'RECTIFICATION' | 'CANCELLATION' | 'OPPOSITION';
+  status: 'RECEIVED' | 'IN_PROGRESS' | 'COMPLETED' | 'REJECTED';
+  channel: 'IN_PERSON' | 'WHATSAPP' | 'EMAIL' | 'PHONE';
+  details: string | null;
+  receivedAt: Date;
+  resolvedAt: Date | null;
+  resolution: string | null;
+  history: Array<{ at: Date; status: PrivacyRequestRecord['status']; actorName: string; note: string | null }>;
 }
 
 export interface Appointment {

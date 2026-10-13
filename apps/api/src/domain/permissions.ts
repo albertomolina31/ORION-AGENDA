@@ -23,6 +23,7 @@ export const basePermissions: Record<Role, Permission[]> = {
     'campaigns.view',
     'campaigns.manage',
     'business.configure',
+    'privacy.manage',
   ],
   ADMIN: [
     'agenda.view_all',
@@ -35,6 +36,7 @@ export const basePermissions: Record<Role, Permission[]> = {
     'loyalty.view',
     'loyalty.redeem',
     'campaigns.view',
+    'privacy.manage',
   ],
   RECEPTION: [
     'agenda.view_all',

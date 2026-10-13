@@ -22,6 +22,8 @@ export const Permission = z.enum([
   'campaigns.view',
   'campaigns.manage',
   'business.configure',
+  /** Solicitudes de derechos, exportación y eliminación de datos de clientes. */
+  'privacy.manage',
 ]);
 export type Permission = z.infer<typeof Permission>;
 

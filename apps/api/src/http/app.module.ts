@@ -13,6 +13,7 @@ import {
   LoyaltyController,
   MeController,
   OperationsController,
+  PrivacyController,
   SimulationController,
 } from './controllers.js';
 import { ErrorEnvelopeFilter } from './error-filter.js';
@@ -37,6 +38,7 @@ export function buildContainer(): OrionContainer {
     CustomersController,
     LoyaltyController,
     CampaignsController,
+    PrivacyController,
     SimulationController,
   ],
   providers: [

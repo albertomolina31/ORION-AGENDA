@@ -6,7 +6,9 @@ import type {
   AppointmentHistoryEntry,
   Business,
   CalendarOccupancy,
+  ConsentRecord,
   Customer,
+  PrivacyRequestRecord,
   IdempotencyRecord,
   Membership,
   NotificationRead,
@@ -40,6 +42,8 @@ export interface MemoryState {
   outbox: OutboxEvent[];
   idempotency: IdempotencyRecord[];
   notificationReads: NotificationRead[];
+  consents: ConsentRecord[];
+  privacyRequests: PrivacyRequestRecord[];
 }
 
 export function emptyState(): MemoryState {
@@ -59,6 +63,8 @@ export function emptyState(): MemoryState {
     outbox: [],
     idempotency: [],
     notificationReads: [],
+    consents: [],
+    privacyRequests: [],
   };
 }
 
@@ -193,6 +199,25 @@ export class MemoryDatabase implements UnitOfWork {
         insert: async (c) => {
           if (s().customers.some((x) => x.id === c.id)) throw new Error(`Duplicate customer id ${c.id}`);
           s().customers.push(clone(c));
+        },
+        update: async (c) => {
+          const i = s().customers.findIndex((x) => x.businessId === c.businessId && x.id === c.id);
+          if (i < 0) throw new Error(`Unknown customer ${c.id}`);
+          s().customers[i] = clone(c);
+        },
+      },
+      privacy: {
+        consentHistory: async (bid, cid) =>
+          clone(s().consents.filter((r) => r.businessId === bid && (!cid || r.customerId === cid))).reverse().sort((a, b) => b.at.getTime() - a.at.getTime()),
+        appendConsent: async (r) => {
+          s().consents.push(clone(r));
+        },
+        listRequests: async (bid) => clone(s().privacyRequests.filter((r) => r.businessId === bid)),
+        getRequest: async (bid, id) => clone(s().privacyRequests.find((r) => r.businessId === bid && r.id === id)),
+        saveRequest: async (r) => {
+          const i = s().privacyRequests.findIndex((x) => x.id === r.id);
+          if (i < 0) s().privacyRequests.push(clone(r));
+          else s().privacyRequests[i] = clone(r);
         },
       },
       appointments: {

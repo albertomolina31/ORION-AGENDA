@@ -23,6 +23,11 @@ import {
   RescheduleRequest,
   SaveCampaignRequest,
   TransitionRequest,
+  AnonymizeCustomerRequest,
+  CreatePrivacyRequest,
+  PrivacyRequestAction,
+  PrivacyRequestTransition,
+  UpdateConsentRequest,
 } from '@orion/contracts';
 import { z } from 'zod';
 import type { OrionContainer } from '../container.js';
@@ -303,6 +308,58 @@ export class CustomersController {
   @Get(':customerId')
   get(@Actor() a: ActorContext, @Param('customerId') id: string) {
     return this.c.customers.get(a, id);
+  }
+
+  // ── Privacidad (sección 14) ──
+
+  @Post(':customerId/consent')
+  @HttpCode(200)
+  consent(@Actor() a: ActorContext, @Param('customerId') id: string, @Body(new ZodPipe(UpdateConsentRequest)) body: z.input<typeof UpdateConsentRequest>) {
+    return this.c.privacy.updateConsent(a, id, body);
+  }
+
+  @Get(':customerId/export')
+  exportData(@Actor() a: ActorContext, @Param('customerId') id: string) {
+    return this.c.privacy.exportCustomer(a, id);
+  }
+
+  @Post(':customerId/anonymize')
+  @HttpCode(200)
+  anonymize(@Actor() a: ActorContext, @Param('customerId') id: string, @Body(new ZodPipe(AnonymizeCustomerRequest)) body: z.input<typeof AnonymizeCustomerRequest>) {
+    return this.c.privacy.anonymize(a, id, body);
+  }
+}
+
+@Controller('businesses/:businessId/privacy')
+@UseGuards(BusinessGuard)
+export class PrivacyController {
+  constructor(@Inject(CONTAINER) private readonly c: OrionContainer) {}
+
+  @Get()
+  overview(@Actor() a: ActorContext) {
+    return this.c.privacy.overview(a);
+  }
+
+  @Post('requests')
+  @HttpCode(201)
+  create(@Actor() a: ActorContext, @Body(new ZodPipe(CreatePrivacyRequest)) body: z.input<typeof CreatePrivacyRequest>) {
+    return this.c.privacy.createRequest(a, body);
+  }
+
+  @Get('requests/:requestId')
+  get(@Actor() a: ActorContext, @Param('requestId') id: string) {
+    return this.c.privacy.getRequest(a, id);
+  }
+
+  @Post('requests/:requestId/:action')
+  @HttpCode(200)
+  transition(
+    @Actor() a: ActorContext,
+    @Param('requestId') id: string,
+    @Param('action', new ZodPipe(PrivacyRequestAction)) action: z.infer<typeof PrivacyRequestAction>,
+    @Body(new ZodPipe(PrivacyRequestTransition)) body: z.input<typeof PrivacyRequestTransition>,
+  ) {
+    return this.c.privacy.transition(a, id, action, body);
   }
 }
 

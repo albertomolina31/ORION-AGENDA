@@ -16,6 +16,7 @@ import { requirePermission } from '../domain/permissions.js';
 import type { IdempotencyService } from './idempotency-service.js';
 import type { Repositories } from './ports.js';
 import { initials, maskPhone, normalizeName, normalizePhone } from './presentation.js';
+import { consentEventDto } from './privacy-service.js';
 
 /** Propuesta: "habitual" = 3 o más visitas completadas. Configurable, no aprobado. */
 export const REGULAR_MIN_VISITS = 3;
@@ -99,7 +100,9 @@ export class CustomerService {
 
   async list(actor: ActorContext, rawQuery: CustomerListQuery): Promise<CustomerListResponse> {
     const q = ListSchema.parse(rawQuery);
-    const { rows, pros } = await this.derive(actor);
+    const { rows: all, pros } = await this.derive(actor);
+    // Los clientes con datos eliminados no aparecen en listas, búsquedas ni audiencias.
+    const rows = all.filter((d) => !d.customer.anonymizedAt);
     const needle = q.q ? normalizeName(q.q) : '';
     const digits = q.q?.replace(/\D/g, '') ?? '';
     const searched = rows.filter(
@@ -141,6 +144,7 @@ export class CustomerService {
       .filter((a) => actor.permissions.has('customers.view_all') || a.professionalId === actor.professionalId)
       .sort((a, b) => b.startsAt.getTime() - a.startsAt.getTime());
     const c = d.customer;
+    const zone = (await this.repos.businesses.get(actor.businessId))?.timezone ?? 'UTC';
     return {
       ...this.summary(d, pros),
       phone: actor.permissions.has('customers.view_all') ? c.phoneE164 : null,
@@ -160,7 +164,11 @@ export class CustomerService {
           serviceName: a.snapshot.serviceName,
           professionalName: pros.get(a.professionalId)?.name ?? '',
         })),
-      possibleDuplicates: await this.duplicatesOf(actor.businessId, c),
+      possibleDuplicates: c.anonymizedAt ? [] : await this.duplicatesOf(actor.businessId, c),
+      consentHistory: actor.permissions.has('customers.view_all')
+        ? (await this.repos.privacy.consentHistory(actor.businessId, c.id)).map((r) => consentEventDto(r, zone))
+        : [],
+      anonymized: !!c.anonymizedAt,
     };
   }
 
@@ -182,6 +190,19 @@ export class CustomerService {
         createdAt: this.clock.now(),
       };
       await this.repos.customers.insert(customer);
+      if (req.promotionalConsent) {
+        await this.repos.privacy.appendConsent({
+          id: this.ids.next('cns'),
+          businessId: actor.businessId,
+          customerId: customer.id,
+          status: 'GRANTED',
+          source: 'STAFF_APP',
+          actorId: actor.userId,
+          actorName: actor.userName,
+          evidence: 'Aceptó al registrarse',
+          at: customer.createdAt,
+        });
+      }
       return { id: customer.id };
     });
     return this.get(actor, created.id);
@@ -194,6 +215,7 @@ export class CustomerService {
       .filter(
         (o) =>
           o.id !== c.id &&
+          !o.anonymizedAt &&
           ((c.phoneE164 && o.phoneE164 === c.phoneE164) || normalizeName(o.name) === normalizeName(c.name)),
       )
       .map((o) => ({ id: o.id, name: o.name }));

@@ -1,4 +1,12 @@
 import type {
+  AnonymizeCustomerRequest,
+  CreatePrivacyRequest,
+  CustomerDataExport,
+  PrivacyOverview,
+  PrivacyRequest,
+  PrivacyRequestAction,
+  PrivacyRequestTransition,
+  UpdateConsentRequest,
   PolicyChangeResult,
   PolicyHistoryItem,
   UpdatePolicyRequest,
@@ -76,6 +84,14 @@ export const endpoints = {
   customers: (bid: string, q: CustomerListQuery) => api<CustomerListResponse>('GET', `${b(bid)}/customers`, { query: q as Record<string, string> }),
   customer: (bid: string, id: string) => api<CustomerDetail>('GET', `${b(bid)}/customers/${id}`),
   createCustomer: (bid: string, body: CreateCustomerRequest) => api<CustomerDetail>('POST', `${b(bid)}/customers`, { body }),
+  updateConsent: (bid: string, id: string, body: UpdateConsentRequest) => api<CustomerDetail>('POST', `${b(bid)}/customers/${id}/consent`, { body }),
+  exportCustomer: (bid: string, id: string) => api<CustomerDataExport>('GET', `${b(bid)}/customers/${id}/export`),
+  anonymizeCustomer: (bid: string, id: string, body: AnonymizeCustomerRequest) => api<CustomerDetail>('POST', `${b(bid)}/customers/${id}/anonymize`, { body }),
+  privacyOverview: (bid: string) => api<PrivacyOverview>('GET', `${b(bid)}/privacy`),
+  privacyRequest: (bid: string, id: string) => api<PrivacyRequest>('GET', `${b(bid)}/privacy/requests/${id}`),
+  createPrivacyRequest: (bid: string, body: CreatePrivacyRequest) => api<PrivacyRequest>('POST', `${b(bid)}/privacy/requests`, { body }),
+  privacyTransition: (bid: string, id: string, action: PrivacyRequestAction, body: PrivacyRequestTransition) =>
+    api<PrivacyRequest>('POST', `${b(bid)}/privacy/requests/${id}/${action}`, { body }),
 
   loyaltyProgram: (bid: string) => api<LoyaltyProgram>('GET', `${b(bid)}/loyalty/program`),
   loyaltyMemberships: (bid: string) => api<LoyaltyMembership[]>('GET', `${b(bid)}/loyalty/memberships`),

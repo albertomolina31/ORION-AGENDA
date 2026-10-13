@@ -500,5 +500,42 @@ export function buildSeed(now: Date): SeedResult {
     ],
   };
 
+  // ── Privacidad: historial de consentimiento y solicitudes de derechos (sección 14) ──
+  let cnsSeq = 0;
+  const consent = (c: Customer, status: Customer['promotionalConsent'], source: 'STAFF_APP' | 'WHATSAPP', evidence: string, atDate: Date) =>
+    s.consents.push({ id: `cns_seed_${++cnsSeq}`, businessId: c.businessId, customerId: c.id, status, source, actorId: source === 'WHATSAPP' ? 'channel:whatsapp' : 'u_rocio', actorName: source === 'WHATSAPP' ? 'WhatsApp' : 'Rocío', evidence, at: atDate });
+  named.fernanda.promotionalConsent = 'GRANTED';
+  for (const c of s.customers.filter((x) => x.businessId === ORBITA)) {
+    if (c.promotionalConsent === 'NOT_GRANTED') continue;
+    const viaWa = Number(c.id.slice(-1)) % 2 === 0;
+    consent(c, 'GRANTED', viaWa ? 'WHATSAPP' : 'STAFF_APP', viaWa ? 'Respondió "Sí" al mensaje de bienvenida' : 'Lo aceptó en mostrador', c.createdAt);
+    if (c.promotionalConsent === 'REVOKED') {
+      consent(c, 'REVOKED', 'WHATSAPP', 'Respondió "BAJA" a una promoción', DateTime.fromJSDate(c.createdAt).plus({ days: 60 }).toJSDate());
+    }
+  }
+  const withAppointments = new Set(s.appointments.map((a) => a.customerId));
+  const quiet = generated.find((c) => !withAppointments.has(c.id)) ?? generated[0]!;
+  const prv = (id: string, c: Customer, type: 'ACCESS' | 'RECTIFICATION' | 'CANCELLATION' | 'OPPOSITION', channel: 'IN_PERSON' | 'WHATSAPP' | 'EMAIL' | 'PHONE', details: string, receivedDays: number, end?: { status: 'IN_PROGRESS' | 'COMPLETED'; days: number; note: string }) => {
+    const receivedAt = today.minus({ days: receivedDays }).set({ hour: 11 }).toJSDate();
+    const history: Array<{ at: Date; status: 'RECEIVED' | 'IN_PROGRESS' | 'COMPLETED'; actorName: string; note: string | null }> = [{ at: receivedAt, status: 'RECEIVED', actorName: 'Rocío', note: null }];
+    if (end) history.push({ at: today.minus({ days: end.days }).set({ hour: 8, minute: 30 }).toJSDate(), status: end.status, actorName: 'Alberto', note: end.note });
+    s.privacyRequests.push({
+      id,
+      businessId: ORBITA,
+      customerId: c.id,
+      type,
+      status: end?.status ?? 'RECEIVED',
+      channel,
+      details,
+      receivedAt,
+      resolvedAt: end?.status === 'COMPLETED' ? history[history.length - 1]!.at : null,
+      resolution: end?.status === 'COMPLETED' ? end.note : null,
+      history,
+    });
+  };
+  prv('prv_seed_1', named.fernanda, 'OPPOSITION', 'WHATSAPP', 'Pidió no recibir más promociones, pero sí sus recordatorios de cita.', 2);
+  prv('prv_seed_2', quiet, 'CANCELLATION', 'IN_PERSON', 'Se muda de ciudad y pidió que se borren sus datos.', 1, { status: 'IN_PROGRESS', days: 0, note: 'Verificamos su identidad en mostrador.' });
+  prv('prv_seed_3', named.diego, 'ACCESS', 'EMAIL', 'Quiere saber qué datos guardamos.', 9, { status: 'COMPLETED', days: 6, note: 'Se le envió la exportación de sus datos por correo.' });
+
   return { db: s, loyalty, campaigns };
 }

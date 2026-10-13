@@ -98,7 +98,7 @@ export default function Negocio() {
       <Section title="Administración">
         <ListRow icon={Bell} title="Notificaciones" subtitle="Avisos para tu equipo" onPress={() => router.push('/notificaciones')} />
         <ListRow icon={LayoutGrid} title="Widgets" subtitle="Vista previa y privacidad en tu pantalla de inicio" onPress={() => router.push('/widgets')} />
-        <ListRow icon={ShieldCheck} title="Privacidad y datos" subtitle="Consentimientos y solicitudes" last />
+        <ListRow icon={ShieldCheck} title="Privacidad y datos" subtitle="Consentimientos y solicitudes" onPress={() => router.push('/privacidad')} last />
       </Section>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>

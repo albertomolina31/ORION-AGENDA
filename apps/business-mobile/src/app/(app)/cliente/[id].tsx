@@ -1,7 +1,8 @@
 import { appointmentStatusLabel } from '@orion/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { CalendarDays, ChevronRight, Clock, FileText, MessageCircle, Plus, Star, User } from 'lucide-react-native';
+import { CalendarDays, ChevronRight, Clock, FileText, MessageCircle, Plus, ShieldCheck, Star, User } from 'lucide-react-native';
+import { ConsentBadge, ConsentHistory } from '@/features/privacy';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { endpoints } from '@/lib/endpoints';
 import { fmt, localDate, noonOf, relativeDayLabel } from '@/lib/format';
@@ -26,8 +27,6 @@ import {
   Text,
 } from '@/ui';
 
-const consentLabel = { GRANTED: 'autorizadas', NOT_GRANTED: 'no autorizadas', REVOKED: 'dadas de baja' } as const;
-
 /** UI11 Ficha: contacto, preferencias, fidelidad e historial dentro de este negocio. */
 export default function CustomerDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -43,6 +42,8 @@ export default function CustomerDetail() {
   const tz = m.timezone;
   const today = home.data?.date ?? '';
   const canCreate = m.permissions.includes('appointments.manage_all') || m.permissions.includes('appointments.manage_own');
+  const canConsent = m.permissions.includes('customers.manage');
+  const canPrivacy = m.permissions.includes('privacy.manage');
 
   if (q.isLoading) return <LoadingState />;
   if (q.error || !c)
@@ -63,7 +64,7 @@ export default function CustomerDetail() {
         void loyalty.refetch();
       }}
       refreshing={q.isRefetching}
-      footer={canCreate ? <Button label="Agendar cita" icon={Plus} onPress={() => router.push(`/cita/nueva?customerId=${c.id}`)} /> : undefined}
+      footer={canCreate && !c.anonymized ? <Button label="Agendar cita" icon={Plus} onPress={() => router.push(`/cita/nueva?customerId=${c.id}`)} /> : undefined}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg }}>
         <Avatar initials={c.initials} size={72} colorKey="lavender" />
@@ -76,6 +77,10 @@ export default function CustomerDetail() {
           </Text>
         </View>
       </View>
+
+      {c.anonymized ? (
+        <Note title="Datos personales eliminados" body="Por solicitud del cliente. Se conservan sus citas e importes sin identificarlo." />
+      ) : null}
 
       {c.possibleDuplicates.length > 0 ? (
         <Note tone="warning" title="Posible duplicado" body={`Revisa: ${c.possibleDuplicates.map((d) => d.name).join(', ')}. No se fusiona automáticamente.`} />
@@ -181,12 +186,30 @@ export default function CustomerDetail() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
           <IconCircle icon={MessageCircle} size={40} />
           <View style={{ flex: 1 }}>
-            <Text variant="subheading">Contacto y preferencias</Text>
+            <Text variant="subheading">Contacto y privacidad</Text>
             <Text variant="caption" color={colors.textMuted}>
-              {c.phone ?? c.phoneMasked ?? 'Sin teléfono'} · Promociones por WhatsApp: {consentLabel[c.promotionalConsent]}
+              {c.phone ?? c.phoneMasked ?? 'Sin teléfono'}
+              {c.email ? ` · ${c.email}` : ''}
             </Text>
           </View>
         </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.md }}>
+          <Text variant="bodyStrong">Promociones por WhatsApp</Text>
+          <ConsentBadge status={c.promotionalConsent} />
+        </View>
+        {c.consentHistory.length > 0 ? <ConsentHistory events={c.consentHistory.slice(0, 3)} tz={tz} /> : null}
+        {!c.anonymized && (canConsent || canPrivacy) ? (
+          <View style={{ gap: spacing.sm, marginTop: spacing.sm }}>
+            {canConsent ? (
+              <Button
+                label={c.promotionalConsent === 'GRANTED' ? 'Registrar baja de promociones' : 'Registrar consentimiento'}
+                variant="outline"
+                onPress={() => router.push(`/cliente/consentimiento?id=${c.id}`)}
+              />
+            ) : null}
+            {canPrivacy ? <Button label="Registrar solicitud de datos" icon={ShieldCheck} variant="ghost" onPress={() => router.push(`/privacidad/nueva?customerId=${c.id}`)} /> : null}
+          </View>
+        ) : null}
       </Card>
       <LinkButton label="Volver a la lista" onPress={() => router.back()} chevron={false} />
     </Screen>
