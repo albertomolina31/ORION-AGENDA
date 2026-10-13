@@ -51,3 +51,14 @@ export function useCustomer(id: string) {
   const { businessId } = useBusiness();
   return useQuery({ queryKey: qk.customer(businessId, id), queryFn: () => endpoints.customer(businessId, id) });
 }
+
+export function useSchedules() {
+  const { businessId } = useBusiness();
+  return useQuery({ queryKey: ['schedules', businessId], queryFn: () => endpoints.schedules(businessId) });
+}
+
+/** Avisos con refresco moderado mientras la app está activa (sección 13). */
+export function useNotifications() {
+  const { businessId } = useBusiness();
+  return useQuery({ queryKey: ['notifications', businessId], queryFn: () => endpoints.notifications(businessId), refetchInterval: 30_000 });
+}

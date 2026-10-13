@@ -103,7 +103,7 @@ export default function Negocio() {
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
         <Info size={18} color={colors.textMuted} />
         <Text variant="caption" color={colors.textMuted}>
-          Los ajustes disponibles dependen de tus permisos. La edición llega en la siguiente iteración.
+          Los ajustes disponibles dependen de tus permisos.
         </Text>
       </View>
     </Screen>

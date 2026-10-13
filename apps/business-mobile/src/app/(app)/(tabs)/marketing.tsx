@@ -128,7 +128,7 @@ function CampaignsTab({ onOpenLoyalty }: { onOpenLoyalty?: () => void }) {
 function CampaignCard({ c, tz }: { c: Campaign; tz: string }) {
   const icon = c.status === 'DRAFT' ? FileText : c.objective === 'THANK_YOU' ? Gift : Megaphone;
   return (
-    <Card onPress={() => router.push(c.status === 'DRAFT' ? `/campana/nueva?id=${c.id}` : `/campana/nueva?id=${c.id}&view=1`)}>
+    <Card onPress={() => router.push(c.status === 'DRAFT' ? `/campana/nueva?id=${c.id}` : `/campana/${c.id}`)}>
       <View style={{ flexDirection: 'row', gap: spacing.md }}>
         <IconCircle icon={icon} size={40} />
         <View style={{ flex: 1, gap: spacing.xs }}>

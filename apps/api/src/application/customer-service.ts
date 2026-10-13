@@ -84,6 +84,7 @@ export class CustomerService {
       phoneMasked: maskPhone(d.customer.phoneE164),
       lastVisitAt: d.completed[0]?.startsAt.toISOString() ?? null,
       completedVisits: d.completed.length,
+      promotionalConsent: d.customer.promotionalConsent,
       nextAppointment: d.next
         ? {
             appointmentId: d.next.id,

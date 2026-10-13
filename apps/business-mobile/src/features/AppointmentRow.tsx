@@ -1,6 +1,6 @@
 import type { Appointment } from '@orion/contracts';
 import { router } from 'expo-router';
-import { Plus } from 'lucide-react-native';
+import { Lock, Plus } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 import { fmt } from '@/lib/format';
 import { Avatar, colors, PressableScale, proColor, radius, shadow, spacing, StatusBadge, Text } from '@/ui';
@@ -43,6 +43,29 @@ export function AppointmentRow({ appt }: { appt: Appointment }) {
           </View>
         </View>
       </PressableScale>
+    </View>
+  );
+}
+
+/** Bloqueo manual en la línea de tiempo (no es una cita). */
+export function BlockRow({ block, tz }: { block: { startsAt: string; endsAt: string; professionalName: string; reason: string | null }; tz: string }) {
+  return (
+    <View style={styles.row}>
+      <View style={styles.timeCol}>
+        <Text variant="captionStrong" color={colors.textMuted}>
+          {fmt.time(block.startsAt, tz)}
+        </Text>
+        <Text variant="micro" color={colors.textSubtle}>
+          {fmt.time(block.endsAt, tz)}
+        </Text>
+      </View>
+      <View style={styles.block} accessibilityLabel={`Bloqueado de ${fmt.time(block.startsAt, tz)} a ${fmt.time(block.endsAt, tz)}, ${block.professionalName}`}>
+        <Lock size={14} color={colors.textMuted} />
+        <Text variant="caption" color={colors.textMuted} style={{ flex: 1 }} numberOfLines={1}>
+          Bloqueado · {block.professionalName}
+          {block.reason ? ` · ${block.reason}` : ''}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -100,6 +123,18 @@ const styles = StyleSheet.create({
   nowRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginVertical: -2 },
   nowDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.danger, marginLeft: -4 },
   nowLine: { flex: 1, height: 2, backgroundColor: colors.danger, opacity: 0.6, marginLeft: -spacing.sm },
+  block: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md + 2,
+    backgroundColor: colors.neutralSoft,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
   free: {
     flex: 1,
     flexDirection: 'row',

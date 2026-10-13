@@ -6,7 +6,15 @@ import {
   AvailabilityQuery,
   ConfirmCampaignRequest,
   CreateAppointmentRequest,
+  CreateBlockRequest,
   CreateCustomerRequest,
+  ExceptionRequest,
+  MarkNotificationsRequest,
+  ProfessionalStatusRequest,
+  SaveProfessionalRequest,
+  SaveServiceRequest,
+  SimpleCommand,
+  WeeklyHoursRequest,
   CustomerListQuery,
   DevLoginRequest,
   RedeemRequest,
@@ -116,6 +124,89 @@ export class BusinessController {
   @Get('integrations')
   async integrations(@Actor() a: ActorContext) {
     return (await this.c.business.profile(a)).integrations;
+  }
+
+  // ── Configuración (P17–P19) ──
+
+  @Post('services')
+  @HttpCode(201)
+  createService(@Actor() a: ActorContext, @Body(new ZodPipe(SaveServiceRequest)) body: z.infer<typeof SaveServiceRequest>) {
+    return this.c.config.saveService(a, null, body);
+  }
+
+  @Patch('services/:serviceId')
+  updateService(@Actor() a: ActorContext, @Param('serviceId') id: string, @Body(new ZodPipe(SaveServiceRequest)) body: z.infer<typeof SaveServiceRequest>) {
+    return this.c.config.saveService(a, id, body);
+  }
+
+  @Post('professionals')
+  @HttpCode(201)
+  createProfessional(@Actor() a: ActorContext, @Body(new ZodPipe(SaveProfessionalRequest)) body: z.infer<typeof SaveProfessionalRequest>) {
+    return this.c.config.saveProfessional(a, null, body);
+  }
+
+  @Patch('professionals/:professionalId')
+  updateProfessional(@Actor() a: ActorContext, @Param('professionalId') id: string, @Body(new ZodPipe(SaveProfessionalRequest)) body: z.infer<typeof SaveProfessionalRequest>) {
+    return this.c.config.saveProfessional(a, id, body);
+  }
+
+  @Get('professionals/:professionalId/future-appointments')
+  futureAppointments(@Actor() a: ActorContext, @Param('professionalId') id: string) {
+    return this.c.config.futureAppointments(a, id);
+  }
+
+  @Post('professionals/:professionalId/status')
+  @HttpCode(200)
+  professionalStatus(@Actor() a: ActorContext, @Param('professionalId') id: string, @Body(new ZodPipe(ProfessionalStatusRequest)) body: z.infer<typeof ProfessionalStatusRequest>) {
+    return this.c.config.setProfessionalActive(a, id, body.active, body.requestId);
+  }
+
+  @Post('schedules/weekly')
+  @HttpCode(200)
+  weekly(@Actor() a: ActorContext, @Body(new ZodPipe(WeeklyHoursRequest)) body: z.infer<typeof WeeklyHoursRequest>) {
+    return this.c.config.setWeeklyHours(a, body);
+  }
+
+  @Post('schedules/exceptions')
+  @HttpCode(200)
+  exception(@Actor() a: ActorContext, @Body(new ZodPipe(ExceptionRequest)) body: z.infer<typeof ExceptionRequest>) {
+    return this.c.config.saveException(a, body);
+  }
+
+  @Post('schedules/exceptions/:exceptionId/delete')
+  @HttpCode(204)
+  deleteException(@Actor() a: ActorContext, @Param('exceptionId') id: string, @Body(new ZodPipe(SimpleCommand)) body: { requestId: string }) {
+    return this.c.config.deleteException(a, id, body.requestId);
+  }
+
+  @Get('blocks')
+  blocks(@Actor() a: ActorContext, @Query(new ZodPipe(z.object({ from: z.iso.datetime({ offset: true }), to: z.iso.datetime({ offset: true }) }))) q: { from: string; to: string }) {
+    return this.c.config.blocks(a, new Date(q.from), new Date(q.to));
+  }
+
+  @Post('blocks')
+  @HttpCode(201)
+  createBlock(@Actor() a: ActorContext, @Body(new ZodPipe(CreateBlockRequest)) body: z.infer<typeof CreateBlockRequest>) {
+    return this.c.config.createBlock(a, body);
+  }
+
+  @Post('blocks/:blockId/remove')
+  @HttpCode(204)
+  removeBlock(@Actor() a: ActorContext, @Param('blockId') id: string, @Body(new ZodPipe(SimpleCommand)) body: { requestId: string }) {
+    return this.c.config.removeBlock(a, id, body.requestId);
+  }
+
+  // ── Notificaciones (UI18) ──
+
+  @Get('notifications')
+  notifications(@Actor() a: ActorContext) {
+    return this.c.notifications.list(a);
+  }
+
+  @Post('notifications/read')
+  @HttpCode(200)
+  markRead(@Actor() a: ActorContext, @Body(new ZodPipe(MarkNotificationsRequest)) body: MarkNotificationsRequest) {
+    return this.c.notifications.markRead(a, body);
   }
 
   @Get('availability')
@@ -265,6 +356,17 @@ export class CampaignsController {
   confirm(@Actor() a: ActorContext, @Param('campaignId') id: string, @Body(new ZodPipe(ConfirmCampaignRequest)) body: { requestId: string }) {
     return this.c.campaigns.confirm(a, id, body.requestId);
   }
+  @Post(':campaignId/:action')
+  @HttpCode(200)
+  changeStatus(
+    @Actor() a: ActorContext,
+    @Param('campaignId') id: string,
+    @Param('action', new ZodPipe(z.enum(['pause', 'resume', 'cancel']))) action: 'pause' | 'resume' | 'cancel',
+    @Body(new ZodPipe(SimpleCommand)) body: { requestId: string },
+  ) {
+    return this.c.campaigns.changeStatus(a, id, action, body.requestId);
+  }
+
 }
 
 @Controller('simulation')

@@ -21,6 +21,8 @@ export const CustomerSummary = z.object({
   lastVisitAt: IsoDateTime.nullable(),
   completedVisits: z.number().int().nonnegative(),
   nextAppointment: UpcomingAppointmentRef.nullable(),
+  /** Necesario para elegir destinatarios de campañas; no equivale a permiso de envío. */
+  promotionalConsent: z.enum(['GRANTED', 'NOT_GRANTED', 'REVOKED']),
 });
 export type CustomerSummary = z.infer<typeof CustomerSummary>;
 

@@ -75,9 +75,14 @@ export const Campaign = z.object({
     .object({
       sent: z.number().int(),
       delivered: z.number().int().nullable(),
+      failed: z.number().int().nullable(),
       replies: z.number().int().nullable(),
+      /** Reservas atribuibles: null hasta definir enlace y ventana de atribución. */
+      attributedBookings: z.number().int().nullable(),
     })
     .nullable(),
+  /** Historial de estados de la campaña. */
+  timeline: z.array(z.object({ at: IsoDateTime, label: z.string() })),
   sentAt: IsoDateTime.nullable(),
   updatedAt: IsoDateTime,
 });

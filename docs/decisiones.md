@@ -21,17 +21,24 @@ Intervalo 15 min · anticipación mínima 1 h · horizonte 60 días · aprobaci�
 | Directorio de clientes / Primeras citas | `/clientes` | Segmentos, búsqueda, orden y paginación |
 | Ficha de cliente | `/cliente/:id` | Historial, preferencias, fidelidad (lectura del módulo de Sergio) |
 | Marketing (Campañas y Fidelidad) | `/marketing` | Listado real; tarjeta con progreso de ejemplo etiquetado |
-| Panel de negocio | `/negocio` | Lectura; edición en P17–P19 |
+| Panel de negocio | `/negocio` | Servicios, equipo, horarios, excepciones y bloqueos editables (P17–P19) |
 | Configura tu programa | `/fidelidad/configurar` | Formulario y revisión; **no aplica cambios** (módulo de Sergio) |
 | Revisión antes del canje | `/fidelidad/canje` | Canje idempotente contra la simulación; escaneo pendiente |
 | Crear campaña pasos 1–4 | `/campana/nueva` | Borrador, audiencia con consentimiento, vista previa; programar bloqueado si la plantilla no está aprobada |
 
 Pantallas adicionales del inventario: detalle de cita y acciones (UI07), nueva cita (UI06), reprogramar (UI08), pendientes (UI09), alta de cliente, servicios/equipo/horarios/reglas en lectura (UI12–UI15), notificaciones (UI18) y cuenta (UI19).
 
+## Iteración 13-oct-2026 (tarde)
+
+- **P17–P19 Edición de Negocio:** servicios (crear, editar, archivar; snapshot intacto), equipo (alta sin usuario, baja solo tras resolver citas futuras, reasignación desde Reprogramar), jornada semanal con jornada partida, excepciones por fecha y bloqueos manuales. Todo cambio de horario calcula conflictos primero (`dryRun`) y nunca mueve ni cancela citas en silencio.
+- **UI24 Campañas:** detalle con métricas disponibles (enviados, entregados, con error, respuestas; reservas atribuibles "No disponible"), historial de estados, pausar/reanudar/cancelar. Selección manual de destinatarios con estado de consentimiento visible.
+- **UI18 Notificaciones:** bandeja derivada del outbox (solicitudes y reservas por WhatsApp, vencimientos, cancelaciones, reprogramaciones), sin auto-avisos del propio actor, filtrada por permisos; contador en la campana.
+- Permisos: catálogo `catalog.manage`; alta/baja de profesionales `team.manage` (solo dueño por defecto); horarios y bloqueos `schedules.manage`.
+
 ## Siguiente bloque sugerido
 
 1. Retomar D09: esquema PostgreSQL, migraciones y pruebas de concurrencia reales (P09, P22).
 2. Decidir autenticación y reemplazar el login simulado (P14).
-3. Edición de servicios, equipo, horarios y bloqueos (P17–P19).
+3. Reglas de reserva editables (UI15) con versionado de políticas (L17).
 4. Development build en iPhone/Android físicos (P12).
 5. Entregar a Carlos y Sergio `docs/openapi.json` y los fixtures (P06).

@@ -151,7 +151,7 @@ export default function Inicio() {
               {m.permissions.includes('customers.manage') ? (
                 <Quick icon={UserPlus} label={`Nuevo ${m.vocabulary.customerSingular.toLowerCase()}`} onPress={() => router.push('/cliente/nuevo')} />
               ) : null}
-              {m.permissions.includes('schedules.manage') ? <Quick icon={CalendarX} label="Bloquear horario" onPress={() => router.push('/ajustes/horarios')} /> : null}
+              {m.permissions.includes('schedules.manage') ? <Quick icon={CalendarX} label="Bloquear horario" onPress={() => router.push('/bloqueo')} /> : null}
             </View>
           </Appear>
 

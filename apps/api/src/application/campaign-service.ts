@@ -135,6 +135,7 @@ export class CampaignService {
         results: null,
         sentAt: null,
         updatedAt: now,
+        timeline: [{ at: now, label: `Borrador creado por ${actor.userName}` }],
       };
       this.state.campaigns.push(c);
       return { id: c.id };
@@ -168,6 +169,35 @@ export class CampaignService {
       c.status = 'SCHEDULED';
       c.scheduledAt = at.toISOString();
       c.updatedAt = this.clock.now().toISOString();
+      c.timeline.push({ at: c.updatedAt, label: `Programada por ${actor.userName}` });
+      return { id };
+    });
+    return this.get(actor, id);
+  }
+
+  /**
+   * Pausar, reanudar o cancelar. Impide despachos futuros; no retira mensajes ya enviados.
+   * Máquina de estados propuesta (pendiente de cerrar con Carlos).
+   */
+  async changeStatus(actor: ActorContext, id: string, action: 'pause' | 'resume' | 'cancel', requestId: string): Promise<Campaign> {
+    requirePermission(actor, 'campaigns.manage');
+    await this.idempotency.execute(actor, `campaign.${action}.${id}`, requestId, { id }, async () => {
+      const c = this.state.campaigns.find((x) => x.businessId === actor.businessId && x.id === id);
+      if (!c) throw new DomainError('NOT_FOUND', 'Campaña no encontrada.');
+      const allowed: Record<typeof action, Campaign['status'][]> = {
+        pause: ['SCHEDULED', 'SENDING'],
+        resume: ['PAUSED'],
+        cancel: ['DRAFT', 'SCHEDULED', 'SENDING', 'PAUSED'],
+      };
+      if (!allowed[action].includes(c.status)) {
+        throw new DomainError('INVALID_TRANSITION', `No se puede ${{ pause: 'pausar', resume: 'reanudar', cancel: 'cancelar' }[action]} una campaña en estado ${c.status}.`);
+      }
+      if (action === 'resume' && c.scheduledAt && new Date(c.scheduledAt).getTime() < this.clock.now().getTime()) {
+        throw new DomainError('POLICY_VIOLATION', 'La fecha programada ya pasó. Cancela y crea una nueva programación.');
+      }
+      c.status = action === 'pause' ? 'PAUSED' : action === 'resume' ? 'SCHEDULED' : 'CANCELLED';
+      c.updatedAt = this.clock.now().toISOString();
+      c.timeline.push({ at: c.updatedAt, label: `${{ pause: 'Pausada', resume: 'Reanudada', cancel: 'Cancelada' }[action]} por ${actor.userName}` });
       return { id };
     });
     return this.get(actor, id);

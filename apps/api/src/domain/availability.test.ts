@@ -109,12 +109,12 @@ describe('Motor de disponibilidad (L05/L06, sección 25)', () => {
   });
 
   it('Precedencia: cierre explícito del negocio anula la jornada; excepción del profesional la sustituye', () => {
-    const closed = input({ exceptions: [{ businessId: 'b1', professionalId: null, date: DATE, closed: true, intervals: [], reason: 'Feriado' }] });
+    const closed = input({ exceptions: [{ id: 'e1', businessId: 'b1', professionalId: null, date: DATE, closed: true, intervals: [], reason: 'Feriado' }] });
     const r = computeAvailability(closed);
     expect(r.slots).toHaveLength(0);
     expect(r.closedReason).toBe('Feriado');
     const special = input({
-      exceptions: [{ businessId: 'b1', professionalId: 'luis', date: DATE, closed: false, intervals: [{ start: '15:00', end: '16:00' }], reason: null }],
+      exceptions: [{ id: 'e2', businessId: 'b1', professionalId: 'luis', date: DATE, closed: false, intervals: [{ start: '15:00', end: '16:00' }], reason: null }],
     });
     expect(computeAvailability(special, 'luis').slots).toHaveLength(2); // 15:00 y 15:15
   });

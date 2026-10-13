@@ -4,6 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowRight, CalendarDays, Check, ChevronDown, ChevronUp, CircleMinus, Clock, ExternalLink, Gift, Heart, Info, Lock, MessageCircle, RotateCcw, ShieldCheck, Users } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { RecipientPicker } from '@/features/RecipientPicker';
 import { WhatsAppIcon } from '@/features/WhatsAppIcon';
 import { endpoints } from '@/lib/endpoints';
 import { addDays } from '@/lib/format';
@@ -60,6 +61,7 @@ export default function NewCampaign() {
   const [segment, setSegment] = useState<(typeof segments)[number]['value']>('INACTIVE');
   const [inactiveDays, setInactiveDays] = useState(60);
   const [excludeUpcoming, setExcludeUpcoming] = useState(true);
+  const [manualIds, setManualIds] = useState<string[]>([]);
   const [showExcluded, setShowExcluded] = useState(true);
   const [templateId, setTemplateId] = useState('tpl_volver');
   const [benefit, setBenefit] = useState('20 % de descuento en tu próximo corte');
@@ -77,6 +79,10 @@ export default function NewCampaign() {
     if (!c) return;
     setName(c.name);
     setObjective(c.objective);
+    if (c.audience?.mode === 'MANUAL') {
+      setMode('MANUAL');
+      setManualIds(c.audience.customerIds);
+    }
     if (c.audience?.mode === 'SEGMENT') {
       setSegment(c.audience.segment);
       setInactiveDays(c.audience.inactiveDays);
@@ -98,11 +104,12 @@ export default function NewCampaign() {
     if (!sendDate && home.data) setSendDate(addDays(home.data.date, 3));
   }, [home.data, sendDate]);
 
-  const audience: AudienceDefinition = { mode: 'SEGMENT', segment, inactiveDays, excludeWithUpcoming: excludeUpcoming };
+  const audience: AudienceDefinition =
+    mode === 'MANUAL' ? { mode: 'MANUAL', customerIds: manualIds } : { mode: 'SEGMENT', segment, inactiveDays, excludeWithUpcoming: excludeUpcoming };
   const preview = useQuery({
     queryKey: ['audience', m.businessId, audience],
     queryFn: () => endpoints.audiencePreview(m.businessId, audience),
-    enabled: step >= 2 && mode === 'SEGMENT',
+    enabled: step >= 2 && (mode === 'SEGMENT' || manualIds.length > 0),
   });
   const templates = useQuery({ queryKey: ['templates', m.businessId], queryFn: () => endpoints.templates(m.businessId) });
   const template = templates.data?.find((t) => t.id === templateId);
@@ -151,13 +158,13 @@ export default function NewCampaign() {
           <View style={{ gap: spacing.xs }}>
             {step === 2 && preview.data ? (
               <Text variant="caption" color={colors.textMuted}>
-                {preview.data.eligible} destinatarios elegibles ahora
+                {preview.data.eligible} {preview.data.eligible === 1 ? 'destinatario elegible' : 'destinatarios elegibles'} ahora
               </Text>
             ) : null}
             <Button
               label={step === 1 ? 'Continuar a audiencia' : step === 2 ? 'Continuar al mensaje' : 'Continuar a revisión'}
               trailingIcon={ArrowRight}
-              disabled={name.trim().length < 3}
+              disabled={name.trim().length < 3 || (step === 2 && mode === 'MANUAL' && manualIds.length === 0)}
               onPress={() => setStep((step + 1) as Step)}
             />
           </View>
@@ -229,9 +236,8 @@ export default function NewCampaign() {
               { value: 'MANUAL', label: 'Selección manual' },
             ]}
           />
-          {mode === 'MANUAL' ? (
-            <Note body="La selección manual de destinatarios llegará en la siguiente iteración. Usa un segmento por ahora." />
-          ) : (
+          {mode === 'MANUAL' ? <RecipientPicker selected={manualIds} onChange={setManualIds} /> : null}
+          {mode === 'SEGMENT' ? (
             <>
               <Text variant="heading">Segmento</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
@@ -260,6 +266,10 @@ export default function NewCampaign() {
               <Text variant="caption" color={colors.textMuted}>
                 Solo clientes con al menos una visita completada. {inactiveDays} días es un ejemplo editable.
               </Text>
+            </>
+          ) : null}
+          {mode === 'SEGMENT' || manualIds.length > 0 ? (
+            <>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Text variant="title">Vista previa de audiencia</Text>
                 <Text variant="caption" color={colors.textMuted}>
@@ -274,7 +284,7 @@ export default function NewCampaign() {
                       <Text variant="display">
                         {preview.data.matched}
                       </Text>
-                      <Text variant="body">Coinciden con el segmento</Text>
+                      <Text variant="body">{mode === 'MANUAL' ? 'Seleccionados' : 'Coinciden con el segmento'}</Text>
                     </View>
                     <Divider />
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
@@ -309,7 +319,7 @@ export default function NewCampaign() {
                 Si alguien retira su consentimiento, no recibirá la campaña.
               </Text>
             </>
-          )}
+          ) : null}
         </View>
       ) : null}
 
@@ -385,9 +395,9 @@ export default function NewCampaign() {
               </Text>
             ) : null}
             <Text variant="caption" color={colors.textMuted}>
-              {segments.find((s) => s.value === segment)?.label}
-              {segment === 'INACTIVE' ? ` · más de ${inactiveDays} días` : ''}
-              {excludeUpcoming ? ' · sin próxima cita' : ''}.
+              {mode === 'MANUAL'
+                ? `Selección manual · ${manualIds.length} ${manualIds.length === 1 ? 'persona' : 'personas'}.`
+                : `${segments.find((x) => x.value === segment)?.label}${segment === 'INACTIVE' ? ` · más de ${inactiveDays} días` : ''}${excludeUpcoming ? ' · sin próxima cita' : ''}.`}
             </Text>
           </ReviewCard>
           <ReviewCard icon={MessageCircle} title="Mensaje" onEdit={readOnly ? undefined : () => setStep(3)}>

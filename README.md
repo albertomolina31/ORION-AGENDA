@@ -33,7 +33,7 @@ Usuarios de prueba (login simulado): **Alberto** (dueño de dos negocios), **Car
 
 ```bash
 pnpm typecheck   # todo el monorepo
-pnpm test        # 46 pruebas de la API: reglas, casos de aceptación y HTTP
+pnpm test        # 63 pruebas de la API: reglas, casos de aceptación, configuración y HTTP
 pnpm openapi     # regenera docs/openapi.json desde los esquemas
 ```
 

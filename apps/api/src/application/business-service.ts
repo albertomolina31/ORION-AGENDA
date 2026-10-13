@@ -141,7 +141,12 @@ export class BusinessService {
       days: Object.entries(h.days).map(([weekday, intervals]) => ({ weekday: Number(weekday), intervals })),
     });
     const pros = await this.repos.schedules.professionalHours(b.id);
+    const today = toLocalDate(this.clock.now(), b.timezone);
+    const exceptions = (await this.repos.schedules.exceptions(b.id, today, '9999-12-31'))
+      .filter((e) => e.professionalId === null || actor.permissions.has('agenda.view_all') || e.professionalId === actor.professionalId)
+      .sort((x, y) => x.date.localeCompare(y.date));
     return {
+      exceptions: exceptions.map((e) => ({ id: e.id, professionalId: e.professionalId, date: e.date, closed: e.closed, intervals: e.intervals, reason: e.reason })),
       timezone: b.timezone,
       business: toDto(await this.repos.schedules.businessHours(b.id)),
       professionals: pros

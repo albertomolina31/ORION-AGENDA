@@ -1,4 +1,14 @@
 import type {
+  Block,
+  CreateBlockRequest,
+  ExceptionRequest,
+  MarkNotificationsRequest,
+  NotificationsResponse,
+  SaveProfessionalRequest,
+  SaveServiceRequest,
+  ScheduleChangeResult,
+  ScheduleConflict,
+  WeeklyHoursRequest,
   AgendaResponse,
   Appointment,
   AppointmentAction,
@@ -70,6 +80,25 @@ export const endpoints = {
   redeem: (bid: string, body: { requestId: string; rewardId: string; appointmentId: string | null }) =>
     api<RedemptionResult>('POST', `${b(bid)}/loyalty/redemptions`, { body }),
 
+  saveService: (bid: string, id: string | null, body: SaveServiceRequest) =>
+    id ? api<Service>('PATCH', `${b(bid)}/services/${id}`, { body }) : api<Service>('POST', `${b(bid)}/services`, { body }),
+  saveProfessional: (bid: string, id: string | null, body: SaveProfessionalRequest) =>
+    id ? api<Professional>('PATCH', `${b(bid)}/professionals/${id}`, { body }) : api<Professional>('POST', `${b(bid)}/professionals`, { body }),
+  futureAppointments: (bid: string, id: string) => api<ScheduleConflict[]>('GET', `${b(bid)}/professionals/${id}/future-appointments`),
+  setProfessionalActive: (bid: string, id: string, active: boolean, requestId: string) =>
+    api<Professional>('POST', `${b(bid)}/professionals/${id}/status`, { body: { requestId, active } }),
+  setWeeklyHours: (bid: string, body: WeeklyHoursRequest) => api<ScheduleChangeResult>('POST', `${b(bid)}/schedules/weekly`, { body }),
+  saveException: (bid: string, body: ExceptionRequest) => api<ScheduleChangeResult>('POST', `${b(bid)}/schedules/exceptions`, { body }),
+  deleteException: (bid: string, id: string, requestId: string) => api<void>('POST', `${b(bid)}/schedules/exceptions/${id}/delete`, { body: { requestId } }),
+  blocks: (bid: string, from: string, to: string) => api<Block[]>('GET', `${b(bid)}/blocks`, { query: { from, to } }),
+  createBlock: (bid: string, body: CreateBlockRequest) => api<Block>('POST', `${b(bid)}/blocks`, { body }),
+  removeBlock: (bid: string, id: string, requestId: string) => api<void>('POST', `${b(bid)}/blocks/${id}/remove`, { body: { requestId } }),
+
+  notifications: (bid: string) => api<NotificationsResponse>('GET', `${b(bid)}/notifications`),
+  markNotifications: (bid: string, body: MarkNotificationsRequest) => api<NotificationsResponse>('POST', `${b(bid)}/notifications/read`, { body }),
+
+  campaignAction: (bid: string, id: string, action: 'pause' | 'resume' | 'cancel', requestId: string) =>
+    api<Campaign>('POST', `${b(bid)}/campaigns/${id}/${action}`, { body: { requestId } }),
   campaigns: (bid: string) => api<Campaign[]>('GET', `${b(bid)}/campaigns`),
   campaign: (bid: string, id: string) => api<Campaign>('GET', `${b(bid)}/campaigns/${id}`),
   templates: (bid: string) => api<MessageTemplate[]>('GET', `${b(bid)}/campaigns/templates`),

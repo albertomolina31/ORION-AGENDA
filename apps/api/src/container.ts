@@ -2,9 +2,11 @@ import { AccessService } from './application/access-service.js';
 import { AppointmentService } from './application/appointment-service.js';
 import { BusinessService } from './application/business-service.js';
 import { CampaignService } from './application/campaign-service.js';
+import { ConfigService } from './application/config-service.js';
 import { CustomerService } from './application/customer-service.js';
 import { IdempotencyService } from './application/idempotency-service.js';
 import { LoyaltySimulation } from './application/loyalty-simulation.js';
+import { NotificationService } from './application/notification-service.js';
 import { OutboxDispatcher } from './application/outbox-dispatcher.js';
 import type { Repositories } from './application/ports.js';
 import type { Clock } from './domain/clock.js';
@@ -28,6 +30,8 @@ export interface OrionContainer {
   business: BusinessService;
   loyalty: LoyaltySimulation;
   campaigns: CampaignService;
+  config: ConfigService;
+  notifications: NotificationService;
   outbox: OutboxDispatcher;
 }
 
@@ -54,6 +58,8 @@ export function createSimulationContainer(clock: Clock, ids: IdGenerator, seedAt
     business,
     loyalty,
     campaigns,
+    config: new ConfigService(repos, clock, ids, idempotency),
+    notifications: new NotificationService(repos, db, clock),
     outbox,
   };
 }

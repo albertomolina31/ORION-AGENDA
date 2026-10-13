@@ -7,4 +7,6 @@ export * from './home.js';
 export * from './loyalty.js';
 export * from './campaigns.js';
 export * from './events.js';
+export * from './config.js';
+export * from './notifications.js';
 export * from './labels.js';

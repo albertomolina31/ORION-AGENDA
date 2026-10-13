@@ -117,12 +117,28 @@ export class AppointmentService {
         noShow: count('NO_SHOW'),
       });
     }
+    const blocks = (await this.repos.occupancies.listBlocks(actor.businessId, new Date(range.start), new Date(range.end)))
+      .filter((o) => !professionalId || o.professionalId === professionalId)
+      .sort((x, y) => x.start.getTime() - y.start.getTime())
+      .map((o) => {
+        const p = lookups.professionals.get(o.professionalId);
+        return {
+          id: o.id,
+          professionalId: o.professionalId,
+          professionalName: p?.name ?? '',
+          colorKey: p?.colorKey ?? 'lavender',
+          startsAt: toZonedIso(o.start, tz),
+          endsAt: toZonedIso(o.end, tz),
+          reason: o.label,
+        };
+      });
     return {
       timezone: tz,
       from: q.from,
       to,
       appointments: list.map((a) => this.toDto(a, actor, lookups, now)),
       days: summaries,
+      blocks,
       generatedAt: now.toISOString(),
     };
   }
@@ -402,6 +418,7 @@ export class AppointmentService {
       },
       status: 'PENDING',
       attempts: 0,
+      actorId: actor?.userId ?? SYSTEM_ACTOR.id,
     });
   }
 

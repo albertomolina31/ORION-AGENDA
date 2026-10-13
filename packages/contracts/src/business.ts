@@ -94,5 +94,16 @@ export const SchedulesResponse = z.object({
   timezone: z.string(),
   business: WeeklySchedule,
   professionals: z.array(WeeklySchedule),
+  /** Excepciones de hoy en adelante (cierres y horarios especiales). */
+  exceptions: z.array(
+    z.object({
+      id: Id,
+      professionalId: Id.nullable(),
+      date: z.iso.date(),
+      closed: z.boolean(),
+      intervals: z.array(TimeRange),
+      reason: z.string().nullable(),
+    }),
+  ),
 });
 export type SchedulesResponse = z.infer<typeof SchedulesResponse>;

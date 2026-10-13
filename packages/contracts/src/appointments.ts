@@ -83,6 +83,18 @@ export const AgendaResponse = z.object({
   to: LocalDate,
   appointments: z.array(Appointment),
   days: z.array(AgendaDaySummary),
+  /** Bloqueos manuales activos en el rango (comparten protección con las citas). */
+  blocks: z.array(
+    z.object({
+      id: Id,
+      professionalId: Id,
+      professionalName: z.string(),
+      colorKey: z.string(),
+      startsAt: IsoDateTime,
+      endsAt: IsoDateTime,
+      reason: z.string().nullable(),
+    }),
+  ),
   /** Instante en que el servidor calculó la respuesta (para mostrar datos desactualizados). */
   generatedAt: IsoDateTime,
 });

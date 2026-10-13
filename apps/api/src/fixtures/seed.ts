@@ -161,7 +161,7 @@ export function buildSeed(now: Date): SeedResult {
   ];
   s.weeklyHours.push(...hours);
   // Domingo cerrado; excepción de ejemplo: cierre del negocio dentro de 10 días.
-  s.exceptions.push({ businessId: ORBITA, professionalId: null, date: today.plus({ days: 10 }).toISODate()!, closed: true, intervals: [], reason: 'Capacitación del equipo' });
+  s.exceptions.push({ id: 'exc_seed_1', businessId: ORBITA, professionalId: null, date: today.plus({ days: 10 }).toISODate()!, closed: true, intervals: [], reason: 'Capacitación del equipo' });
 
   // ── Clientes ──
   const random = rng(42);
@@ -335,6 +335,40 @@ export function buildSeed(now: Date): SeedResult {
   book(generated[7]!, 'pro_sofia', 'svc_manicura', at(1, '17:00'), 'CONFIRMED');
   book(generated[9]!, 'pro_ana', 'svc_coloracion', at(3, '15:00'), 'CONFIRMED');
 
+  // Cancelación hecha por el cliente desde WhatsApp (aparece en la bandeja de avisos).
+  const cancelledByChannel = book(generated[12]!, 'pro_luis', 'svc_corte_clasico', at(0, '15:00'), 'CANCELLED', 'WHATSAPP');
+  cancelledByChannel.version = 2;
+  const cancelEntry = s.history.find((h) => h.appointmentId === cancelledByChannel.id && h.toStatus === 'CANCELLED')!;
+  Object.assign(cancelEntry, { actorId: 'channel:whatsapp', actorName: 'Cliente (WhatsApp)', at: new Date(now.getTime() - 25 * MINUTE), reason: 'Cancelada por el cliente' });
+
+  // Eventos de dominio de lo que llegó por WhatsApp (base de la bandeja de notificaciones).
+  let evtSeq = 0;
+  const event = (a: Appointment, eventType: string, occurredAt: Date) => {
+    evtSeq += 1;
+    s.outbox.push({
+      eventId: `evt_seed_${evtSeq}`,
+      eventType,
+      schemaVersion: 1,
+      occurredAt,
+      businessId: a.businessId,
+      aggregateId: a.id,
+      aggregateVersion: a.version,
+      correlationId: `seed-${evtSeq}`,
+      payload: { appointmentId: a.id, customerId: a.customerId, serviceId: a.serviceId, professionalId: a.professionalId, startsAt: a.startsAt.toISOString(), status: a.status },
+      status: 'DISPATCHED',
+      attempts: 1,
+      actorId: 'channel:whatsapp',
+    });
+  };
+  s.appointments
+    .filter((a) => a.source === 'WHATSAPP' && a.startsAt.getTime() >= today.toMillis())
+    .forEach((a, i) => {
+      const when = new Date(now.getTime() - (40 + i * 35) * MINUTE);
+      if (a.status === 'PENDING_APPROVAL') event(a, 'appointment.pending', new Date(now.getTime() - (5 + i * 7) * MINUTE));
+      else if (a.status === 'CANCELLED') event(a, 'appointment.cancelled', new Date(now.getTime() - 25 * MINUTE));
+      else event(a, 'appointment.confirmed', when);
+    });
+
   // Consultorio Luna (aislamiento entre negocios).
   const lunaPatient = s.customers.find((c) => c.businessId === LUNA)!;
   book(lunaPatient, 'pro_elena', 'svc_consulta', at(0, '09:00'), 'CONFIRMED');
@@ -415,6 +449,10 @@ export function buildSeed(now: Date): SeedResult {
         results: null,
         sentAt: null,
         updatedAt: iso(at(-1, '18:00')),
+        timeline: [
+          { at: iso(at(-2, '17:40')), label: 'Borrador creado por Alberto' },
+          { at: iso(at(-1, '18:00')), label: 'Programada por Alberto' },
+        ],
       },
       {
         id: 'cmp_octubre',
@@ -431,6 +469,7 @@ export function buildSeed(now: Date): SeedResult {
         results: null,
         sentAt: null,
         updatedAt: iso(at(-2, '12:00')),
+        timeline: [{ at: iso(at(-2, '12:00')), label: 'Borrador creado por Alberto' }],
       },
       {
         id: 'cmp_gracias',
@@ -444,9 +483,15 @@ export function buildSeed(now: Date): SeedResult {
         schedule: { mode: 'NOW' },
         scheduledAt: iso(at(-4, '10:00')),
         eligibleCount: 60,
-        results: { sent: 60, delivered: 54, replies: null },
+        results: { sent: 60, delivered: 54, failed: 3, replies: 7, attributedBookings: null },
         sentAt: iso(at(-4, '10:00')),
         updatedAt: iso(at(-4, '10:05')),
+        timeline: [
+          { at: iso(at(-5, '16:00')), label: 'Borrador creado por Alberto' },
+          { at: iso(at(-5, '16:20')), label: 'Programada por Alberto' },
+          { at: iso(at(-4, '10:00')), label: 'Envío iniciado' },
+          { at: iso(at(-4, '10:05')), label: 'Finalizada: 60 enviados, 3 con error' },
+        ],
       },
     ],
   };

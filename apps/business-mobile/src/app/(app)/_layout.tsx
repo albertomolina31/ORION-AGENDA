@@ -8,5 +8,9 @@ export default function AppLayout() {
   if (status === 'loading') return <LoadingState label="Abriendo tu agenda…" />;
   if (status === 'signedOut') return <Redirect href="/login" />;
   if (!membership) return <Redirect href="/negocios" />;
-  return <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }} />;
+  return (
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+      <Stack.Screen name="bloqueo" options={{ presentation: 'modal' }} />
+    </Stack>
+  );
 }

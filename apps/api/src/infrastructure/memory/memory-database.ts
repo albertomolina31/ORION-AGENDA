@@ -9,6 +9,7 @@ import type {
   Customer,
   IdempotencyRecord,
   Membership,
+  NotificationRead,
   OutboxEvent,
   Professional,
   ProfessionalService,
@@ -38,6 +39,7 @@ export interface MemoryState {
   history: AppointmentHistoryEntry[];
   outbox: OutboxEvent[];
   idempotency: IdempotencyRecord[];
+  notificationReads: NotificationRead[];
 }
 
 export function emptyState(): MemoryState {
@@ -56,6 +58,7 @@ export function emptyState(): MemoryState {
     history: [],
     outbox: [],
     idempotency: [],
+    notificationReads: [],
   };
 }
 
@@ -120,6 +123,50 @@ export class MemoryDatabase implements UnitOfWork {
         professionals: async (bid) => clone(s().professionals.filter((p) => p.businessId === bid)),
         services: async (bid) => clone(s().services.filter((x) => x.businessId === bid)),
         professionalServices: async (bid) => clone(s().professionalServices.filter((x) => x.businessId === bid)),
+      },
+      catalogWriter: {
+        upsertService: async (svc) => {
+          const i = s().services.findIndex((x) => x.businessId === svc.businessId && x.id === svc.id);
+          if (i >= 0) s().services[i] = clone(svc);
+          else s().services.push(clone(svc));
+        },
+        upsertProfessional: async (p) => {
+          const i = s().professionals.findIndex((x) => x.businessId === p.businessId && x.id === p.id);
+          if (i >= 0) s().professionals[i] = clone(p);
+          else s().professionals.push(clone(p));
+        },
+        setServiceProfessionals: async (bid, serviceId, proIds) => {
+          s().professionalServices = s().professionalServices.filter((l) => !(l.businessId === bid && l.serviceId === serviceId));
+          proIds.forEach((professionalId) => s().professionalServices.push({ businessId: bid, serviceId, professionalId }));
+        },
+        setProfessionalServices: async (bid, professionalId, serviceIds) => {
+          s().professionalServices = s().professionalServices.filter((l) => !(l.businessId === bid && l.professionalId === professionalId));
+          serviceIds.forEach((serviceId) => s().professionalServices.push({ businessId: bid, serviceId, professionalId }));
+        },
+      },
+      scheduleWriter: {
+        setWeekly: async (h) => {
+          s().weeklyHours = s().weeklyHours.filter((x) => !(x.businessId === h.businessId && x.professionalId === h.professionalId));
+          s().weeklyHours.push(clone(h));
+        },
+        upsertException: async (e) => {
+          const i = s().exceptions.findIndex((x) => x.businessId === e.businessId && x.id === e.id);
+          if (i >= 0) s().exceptions[i] = clone(e);
+          else s().exceptions.push(clone(e));
+        },
+        deleteException: async (bid, id) => {
+          s().exceptions = s().exceptions.filter((x) => !(x.businessId === bid && x.id === id));
+        },
+      },
+      notificationReads: {
+        list: async (userId, bid) => clone(s().notificationReads.filter((r) => r.userId === userId && r.businessId === bid)),
+        mark: async (reads) => {
+          for (const r of reads) {
+            if (!s().notificationReads.some((x) => x.userId === r.userId && x.businessId === r.businessId && x.eventId === r.eventId)) {
+              s().notificationReads.push(clone(r));
+            }
+          }
+        },
       },
       schedules: {
         businessHours: async (bid) =>
@@ -205,6 +252,22 @@ export class MemoryDatabase implements UnitOfWork {
         deactivateForAppointment: async (bid, apptId) => {
           s().occupancies.forEach((o) => {
             if (o.businessId === bid && o.appointmentId === apptId) o.active = false;
+          });
+        },
+        listBlocks: async (bid, from, to) =>
+          clone(
+            s().occupancies.filter(
+              (o) =>
+                o.businessId === bid &&
+                o.kind === 'BLOCK' &&
+                o.active &&
+                overlaps({ start: o.start.getTime(), end: o.end.getTime() }, { start: from.getTime(), end: to.getTime() }),
+            ),
+          ),
+        getBlock: async (bid, id) => clone(s().occupancies.find((o) => o.businessId === bid && o.id === id && o.kind === 'BLOCK')),
+        deactivate: async (bid, id) => {
+          s().occupancies.forEach((o) => {
+            if (o.businessId === bid && o.id === id) o.active = false;
           });
         },
       },

@@ -1,9 +1,9 @@
-import type { Appointment } from '@orion/contracts';
+import type { AgendaResponse, Appointment } from '@orion/contracts';
 import { router } from 'expo-router';
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock, Plus } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { AppointmentRow, FreeSlot, NowMarker } from '@/features/AppointmentRow';
+import { AppointmentRow, BlockRow, FreeSlot, NowMarker } from '@/features/AppointmentRow';
 import { addDays, fmt, localDate, noonOf, startOfWeek } from '@/lib/format';
 import { useAgenda, useHome, useProfessionals } from '@/lib/queries';
 import { useBusiness } from '@/lib/session';
@@ -182,11 +182,11 @@ export default function Agenda() {
               {daySummary?.confirmed ?? 0} {daySummary?.confirmed === 1 ? 'confirmada' : 'confirmadas'}
             </Text>
           </View>
-          {visible.length === 0 ? (
+          {visible.length === 0 && agenda.data.blocks.length === 0 ? (
             <EmptyState pose="sleep" title="Sin citas este día" body={canCreate ? 'Agenda una cita o revisa otro día.' : 'Revisa otro día de la semana.'} />
           ) : (
             <Animated.View style={{ gap: spacing.sm }} layout={LinearTransition.springify().damping(18).reduceMotion(ReduceMotion.System)}>
-              {timeline(expanded ? visible : visible.slice(0, COLLAPSED_ROWS), {
+              {timeline(expanded ? visible : visible.slice(0, COLLAPSED_ROWS), agenda.data.blocks.filter((b) => localDate(b.startsAt, tz) === day || localDate(b.endsAt, tz) === day), {
                 showNow: day === today ? (agenda.data?.generatedAt ?? null) : null,
                 showGaps: !!pro || !canSeeAll,
                 tz,
@@ -224,13 +224,22 @@ export default function Agenda() {
 /** Construye la línea de tiempo: citas, marca de "ahora" y huecos libres (≥ 30 min). */
 function timeline(
   list: Appointment[],
+  blocks: AgendaResponse['blocks'],
   opts: { showNow: string | null; showGaps: boolean; tz: string; onBook: () => void; canCreate: boolean },
 ) {
   const out: React.ReactNode[] = [];
   const now = opts.showNow ? new Date(opts.showNow).getTime() : null;
   let nowPlaced = now === null;
+  const pending = [...blocks];
+  const flushBlocksBefore = (t: number) => {
+    while (pending.length && new Date(pending[0]!.startsAt).getTime() <= t) {
+      const b = pending.shift()!;
+      out.push(<BlockRow key={b.id} block={b} tz={opts.tz} />);
+    }
+  };
   list.forEach((a, i) => {
     const start = new Date(a.startsAt).getTime();
+    flushBlocksBefore(start);
     if (!nowPlaced && now !== null && start > now) {
       out.push(<NowMarker key="now" time={fmt.time(opts.showNow!, opts.tz)} />);
       nowPlaced = true;
@@ -241,7 +250,8 @@ function timeline(
       </Appear>,
     );
     const next = list[i + 1];
-    if (opts.showGaps && opts.canCreate && next) {
+    const blockInGap = next && pending.some((b) => new Date(b.startsAt).getTime() < new Date(next.startsAt).getTime());
+    if (opts.showGaps && opts.canCreate && next && !blockInGap) {
       const end = new Date(a.endsAt).getTime();
       const nextStart = new Date(next.startsAt).getTime();
       const from = Math.max(end, now ?? 0);
@@ -252,6 +262,7 @@ function timeline(
       }
     }
   });
+  flushBlocksBefore(Number.MAX_SAFE_INTEGER);
   if (!nowPlaced && now !== null && list.length > 0) out.push(<NowMarker key="now" time={fmt.time(opts.showNow!, opts.tz)} />);
   return out;
 }

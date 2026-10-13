@@ -7,9 +7,9 @@ import { DateStrip, SlotGrid } from '@/features/SlotPicker';
 import { endpoints } from '@/lib/endpoints';
 import { fmt, localDate, noonOf } from '@/lib/format';
 import { useIdempotentMutation } from '@/lib/mutations';
-import { useAppointment, useHome } from '@/lib/queries';
+import { useAppointment, useHome, useProfessionals, useServices } from '@/lib/queries';
 import { useBusiness } from '@/lib/session';
-import { Button, Card, colors, ErrorState, LoadingState, Note, Screen, spacing, StackHeader, Text } from '@/ui';
+import { Avatar, Button, Card, Chip, colors, ErrorState, LoadingState, Note, Screen, spacing, StackHeader, Text, useFeedback } from '@/ui';
 
 /** UI08 Reprogramar: horario actual visible y comparación antes/después. Un conflicto conserva el original. */
 export default function Reschedule() {
@@ -21,27 +21,39 @@ export default function Reschedule() {
   const [date, setDate] = useState<string | null>(null);
   const [startsAt, setStartsAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [proId, setProId] = useState<string | null>(null);
+  const pros = useProfessionals();
+  const services = useServices();
+  const feedback = useFeedback();
+  const selectedPro = proId ?? a?.professional.id;
+  const eligible = (pros.data ?? []).filter((p) => p.active && services.data?.find((s) => s.id === a?.service.id)?.professionalIds.includes(p.id));
 
   useEffect(() => {
     if (a && !date) setDate(localDate(a.startsAt, a.timezone));
   }, [a, date]);
 
   const availability = useQuery({
-    queryKey: ['availability', m.businessId, a?.service.id, a?.professional.id, date, id],
+    queryKey: ['availability', m.businessId, a?.service.id, selectedPro, date, id],
     queryFn: () =>
-      endpoints.availability(m.businessId, { serviceId: a!.service.id, professionalId: a!.professional.id, date: date!, excludeAppointmentId: id }),
+      endpoints.availability(m.businessId, { serviceId: a!.service.id, professionalId: selectedPro, date: date!, excludeAppointmentId: id }),
     enabled: !!a && !!date,
   });
 
   const mutation = useIdempotentMutation(
-    (_: void, requestId) => endpoints.reschedule(m.businessId, id, { requestId, expectedVersion: a!.version, startsAt: startsAt! }),
+    (_: void, requestId) =>
+      endpoints.reschedule(m.businessId, id, {
+        requestId,
+        expectedVersion: a!.version,
+        startsAt: startsAt!,
+        ...(selectedPro && selectedPro !== a!.professional.id ? { professionalId: selectedPro } : {}),
+      }),
     [['appointment', m.businessId, id], ['agenda', m.businessId], ['home', m.businessId]],
   );
 
   if (appt.isLoading || !date) return <LoadingState />;
   if (appt.error || !a) return <ErrorState error={appt.error} onRetry={() => appt.refetch()} />;
   const tz = a.timezone;
-  const unchanged = startsAt === a.startsAt;
+  const unchanged = startsAt === a.startsAt && selectedPro === a.professional.id;
 
   return (
     <Screen
@@ -55,7 +67,10 @@ export default function Reschedule() {
           onPress={() => {
             setError(null);
             mutation.mutate(undefined, {
-              onSuccess: () => router.back(),
+              onSuccess: () => {
+                feedback.toast('Cita reprogramada');
+                router.back();
+              },
               onError: (err) => {
                 if (err.code === 'SLOT_UNAVAILABLE') {
                   setError('Ese horario ya no está disponible. Tu cita original sigue igual.');
@@ -102,6 +117,25 @@ export default function Reschedule() {
         </>
       ) : null}
       {error ? <Note tone="warning" body={error} /> : null}
+      {eligible.length > 1 ? (
+        <View style={{ gap: spacing.sm }}>
+          <Text variant="subheading">Profesional</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+            {eligible.map((p) => (
+              <Chip
+                key={p.id}
+                label={p.id === a.professional.id ? `${p.name} (actual)` : p.name}
+                selected={selectedPro === p.id}
+                onPress={() => {
+                  setProId(p.id);
+                  setStartsAt(null);
+                }}
+                leading={<Avatar initials={p.initials} colorKey={p.colorKey} size={22} />}
+              />
+            ))}
+          </View>
+        </View>
+      ) : null}
       <View style={{ gap: spacing.md }}>
         <DateStrip
           start={home.data?.date ?? date}

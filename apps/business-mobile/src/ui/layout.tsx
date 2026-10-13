@@ -2,10 +2,11 @@ import { router } from 'expo-router';
 import { Bell, ChevronDown, ChevronLeft, FlaskConical } from 'lucide-react-native';
 import { type ReactNode, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, RefreshControl, StyleSheet, View, type ViewStyle } from 'react-native';
-import Animated, { interpolate, useAnimatedReaction, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, type SharedValue } from 'react-native-reanimated';
+import Animated, { interpolate, ReduceMotion, ZoomIn, useAnimatedReaction, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, type SharedValue } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { scheduleOnRN } from 'react-native-worklets';
+import { useNotifications } from '@/lib/queries';
 import { useSession } from '@/lib/session';
 import { Text } from './Text';
 import { colors, radius, spacing, touchTarget } from './theme';
@@ -65,6 +66,8 @@ export function Screen({
 export function AppHeader({ title, scrollY }: { title?: string; scrollY?: SharedValue<number> }) {
   const { membership, me } = useSession();
   const [collapsed, setCollapsed] = useState(false);
+  const inbox = useNotifications();
+  const unread = inbox.data?.unreadCount ?? 0;
   const fallback = useSharedValue(0);
   const y = scrollY ?? fallback;
   useAnimatedReaction(
@@ -110,8 +113,20 @@ export function AppHeader({ title, scrollY }: { title?: string; scrollY?: Shared
             Demo
           </Text>
         </View>
-        <Pressable onPress={() => router.push('/notificaciones')} accessibilityRole="button" accessibilityLabel="Notificaciones" style={styles.iconBtn}>
+        <Pressable
+          onPress={() => router.push('/notificaciones')}
+          accessibilityRole="button"
+          accessibilityLabel={unread ? `Notificaciones, ${unread} sin leer` : 'Notificaciones'}
+          style={styles.iconBtn}
+        >
           <Bell size={22} color={colors.text} />
+          {unread > 0 ? (
+            <Animated.View entering={ZoomIn.springify().reduceMotion(ReduceMotion.System)} style={styles.badge}>
+              <Text variant="micro" color={colors.textOnPrimary}>
+                {unread > 9 ? '9+' : unread}
+              </Text>
+            </Animated.View>
+          ) : null}
         </Pressable>
         <Pressable onPress={() => router.push('/cuenta')} accessibilityRole="button" accessibilityLabel="Tu cuenta" style={styles.avatarBtn}>
           <Text variant="subheading" color={colors.primary}>
@@ -230,6 +245,20 @@ const styles = StyleSheet.create({
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   demo: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radius.pill, backgroundColor: colors.accentSoft },
   iconBtn: { width: touchTarget, height: touchTarget, alignItems: 'center', justifyContent: 'center' },
+  badge: {
+    position: 'absolute',
+    top: 6,
+    right: 4,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    borderRadius: 9,
+    backgroundColor: colors.danger,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.background,
+  },
   avatarBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.primarySoftStrong, alignItems: 'center', justifyContent: 'center' },
   stackHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, backgroundColor: colors.background },
   backBtn: { width: touchTarget, height: touchTarget, alignItems: 'center', justifyContent: 'center' },

@@ -84,6 +84,7 @@ export interface WeeklyHours {
 }
 
 export interface ScheduleException {
+  id: string;
   businessId: string;
   professionalId: string | null;
   /** Fecha local AAAA-MM-DD. */
@@ -175,6 +176,14 @@ export interface OutboxEvent {
   payload: Record<string, unknown>;
   status: 'PENDING' | 'DISPATCHED' | 'FAILED';
   attempts: number;
+  /** Quién originó el cambio (usuario, canal o 'system'). Uso interno: no viaja a consumidores externos. */
+  actorId: string;
+}
+
+export interface NotificationRead {
+  userId: string;
+  businessId: string;
+  eventId: string;
 }
 
 export interface IdempotencyRecord {

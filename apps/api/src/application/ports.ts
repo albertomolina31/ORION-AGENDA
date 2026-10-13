@@ -6,6 +6,7 @@ import type {
   Customer,
   IdempotencyRecord,
   Membership,
+  NotificationRead,
   OutboxEvent,
   Professional,
   ProfessionalService,
@@ -41,6 +42,26 @@ export interface CatalogReader {
   professionalServices(businessId: string): Promise<ProfessionalService[]>;
 }
 
+export interface CatalogWriter {
+  upsertService(s: Service): Promise<void>;
+  upsertProfessional(p: Professional): Promise<void>;
+  /** Reemplaza las asignaciones de un servicio. */
+  setServiceProfessionals(businessId: string, serviceId: string, professionalIds: string[]): Promise<void>;
+  /** Reemplaza las asignaciones de un profesional. */
+  setProfessionalServices(businessId: string, professionalId: string, serviceIds: string[]): Promise<void>;
+}
+
+export interface ScheduleWriter {
+  setWeekly(hours: WeeklyHours): Promise<void>;
+  upsertException(e: ScheduleException): Promise<void>;
+  deleteException(businessId: string, id: string): Promise<void>;
+}
+
+export interface NotificationReadStore {
+  list(userId: string, businessId: string): Promise<NotificationRead[]>;
+  mark(reads: NotificationRead[]): Promise<void>;
+}
+
 export interface ScheduleReader {
   businessHours(businessId: string): Promise<WeeklyHours>;
   professionalHours(businessId: string): Promise<WeeklyHours[]>;
@@ -69,6 +90,9 @@ export interface OccupancyRepository {
   /** Debe rechazar traslapes activos del mismo profesional (restricción de exclusión). */
   insert(o: CalendarOccupancy): Promise<void>;
   deactivateForAppointment(businessId: string, appointmentId: string): Promise<void>;
+  listBlocks(businessId: string, from: Date, to: Date): Promise<CalendarOccupancy[]>;
+  getBlock(businessId: string, id: string): Promise<CalendarOccupancy | undefined>;
+  deactivate(businessId: string, id: string): Promise<void>;
 }
 
 export interface HistoryRepository {
@@ -94,7 +118,10 @@ export interface Repositories {
   memberships: MembershipReader;
   businesses: BusinessReader;
   catalog: CatalogReader;
+  catalogWriter: CatalogWriter;
   schedules: ScheduleReader;
+  scheduleWriter: ScheduleWriter;
+  notificationReads: NotificationReadStore;
   customers: CustomerRepository;
   appointments: AppointmentRepository;
   occupancies: OccupancyRepository;
