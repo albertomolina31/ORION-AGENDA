@@ -27,6 +27,7 @@ import {
   Text,
   useFeedback,
 } from '@/ui';
+import { themed } from '@/ui';
 
 /**
  * Validar canje. Escanear solo identifica la tarjeta; el canje lo autoriza el servidor
@@ -228,7 +229,7 @@ function OutlineAction({ icon: Icon, label, onPress, disabled }: { icon: typeof 
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   outline: {
     flex: 1,
     flexDirection: 'row',
@@ -243,4 +244,4 @@ const styles = StyleSheet.create({
   },
   pick: { padding: spacing.lg, minHeight: 56 },
   validRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.accentBorder },
-});
+}));

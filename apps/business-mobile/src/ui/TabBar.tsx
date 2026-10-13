@@ -6,6 +6,7 @@ import Animated from 'react-native-reanimated';
 import { haptic, usePop } from './motion';
 import { Text } from './Text';
 import { colors, radius, spacing } from './theme';
+import { themed } from './theme';
 
 export const tabIcons: Record<string, LucideIcon> = {
   index: House,
@@ -66,7 +67,7 @@ function TabIcon({ Icon, focused }: { Icon: LucideIcon; focused: boolean }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   bar: {
     flexDirection: 'row',
     backgroundColor: colors.surface,
@@ -77,4 +78,4 @@ const styles = StyleSheet.create({
   item: { flex: 1, alignItems: 'center', gap: 2, minHeight: 48 },
   pill: { paddingHorizontal: spacing.md + 2, paddingVertical: 3, borderRadius: radius.pill },
   pillActive: { backgroundColor: colors.primarySoft },
-});
+}));

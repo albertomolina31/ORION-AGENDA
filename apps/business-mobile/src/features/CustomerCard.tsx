@@ -4,6 +4,7 @@ import { CalendarDays, ChevronRight } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 import { fmt, localDate, relativeDayLabel } from '@/lib/format';
 import { Avatar, Badge, colors, PressableScale, radius, shadow, spacing, StatusBadge, Text } from '@/ui';
+import { themed } from '@/ui';
 
 export function CustomerCard({
   customer,
@@ -76,7 +77,7 @@ export function CustomerCard({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -99,4 +100,4 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     backgroundColor: colors.primarySoft,
   },
-});
+}));

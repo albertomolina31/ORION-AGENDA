@@ -1,6 +1,6 @@
 import type { ScheduleConflict } from '@orion/contracts';
 import { SaveProfessionalRequest } from '@orion/contracts';
-import { professionalColors } from '@orion/design-tokens';
+import { professionalPalette } from '@/ui';
 import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Check, UserCheck, UserX } from 'lucide-react-native';
@@ -115,7 +115,7 @@ export default function ProfessionalEditor() {
       <View style={{ alignItems: 'center', gap: spacing.sm }}>
         <Avatar initials={(name || '?').split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()} colorKey={colorKey} size={72} />
         <View style={{ flexDirection: 'row', gap: spacing.sm }} accessibilityRole="radiogroup" accessibilityLabel="Color en la agenda">
-          {professionalColors.map((c) => (
+          {professionalPalette().map((c) => (
             <Pressable
               key={c.key}
               onPress={() => setColorKey(c.key)}

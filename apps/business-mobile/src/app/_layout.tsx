@@ -10,6 +10,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AppearanceProvider, useAppearance } from '@/lib/appearance';
 import { SessionProvider } from '@/lib/session';
 import { colors, FeedbackProvider } from '@/ui';
 
@@ -25,12 +26,24 @@ export default function RootLayout() {
   if (!fontsLoaded && !fontError) return <View style={{ flex: 1, backgroundColor: colors.background }} />;
   return (
     <SafeAreaProvider>
-      <SessionProvider>
-        <FeedbackProvider>
-          <StatusBar style="dark" />
-          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background }, animation: 'slide_from_right' }} />
-        </FeedbackProvider>
-      </SessionProvider>
+      <AppearanceProvider>
+        <SessionProvider>
+          <FeedbackProvider>
+            <ThemedStack />
+          </FeedbackProvider>
+        </SessionProvider>
+      </AppearanceProvider>
     </SafeAreaProvider>
+  );
+}
+
+/** El navegador se vuelve a montar al cambiar de tema para recalcular los estilos. */
+function ThemedStack() {
+  const { scheme } = useAppearance();
+  return (
+    <>
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+      <Stack key={scheme} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background }, animation: 'slide_from_right' }} />
+    </>
   );
 }

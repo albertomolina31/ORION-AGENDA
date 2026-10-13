@@ -2,6 +2,7 @@ import type { WidgetAppointment, WidgetSnapshot } from '@orion/contracts';
 import { Lock } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 import { colors, NightCard, Ori, proColor, radius, spacing, Text } from '@/ui';
+import { themed } from '@/ui';
 
 /**
  * Vista previa de los widgets de inicio, dibujada con los mismos datos de la instantánea
@@ -173,7 +174,7 @@ export function WeekSummaryWidget({ snapshot, stale }: { snapshot: WidgetSnapsho
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   lightCard: {
     borderRadius: 22,
     backgroundColor: colors.surface,
@@ -198,4 +199,4 @@ const styles = StyleSheet.create({
   weekDayToday: { backgroundColor: colors.primary },
   weekRow: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   weekRowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
-});
+}));

@@ -6,6 +6,7 @@ import { useAgenda, useHome } from '@/lib/queries';
 import { useBusiness } from '@/lib/session';
 import { useRefreshOnFocus } from '@/lib/use-refresh-on-focus';
 import { colors, EmptyState, ErrorState, IconCircle, radius, Screen, SkeletonList, spacing, StackHeader, Text } from '@/ui';
+import { themed } from '@/ui';
 
 /** UI09 Pendientes: solicitudes con vencimiento explícito. Aprobar/rechazar desde el detalle. */
 export default function Pending() {
@@ -42,7 +43,7 @@ export default function Pending() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -53,4 +54,4 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.accentBorder,
   },
-});
+}));

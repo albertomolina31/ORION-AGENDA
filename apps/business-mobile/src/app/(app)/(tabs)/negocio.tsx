@@ -18,6 +18,7 @@ import {
   spacing,
   Text,
 } from '@/ui';
+import { themed } from '@/ui';
 
 /** Negocio: servicios, equipo, horarios, políticas e integraciones (conexión de WhatsApp aquí, no en una pestaña). */
 export default function Negocio() {
@@ -122,7 +123,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   storeIcon: { width: 52, height: 52, borderRadius: radius.lg, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
   profileBtn: {
     flexDirection: 'row',
@@ -131,8 +132,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     minHeight: 44,
     borderRadius: radius.pill,
-    backgroundColor: '#F8DFA9',
+    backgroundColor: colors.accentButton,
   },
   connRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
   connIcon: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
-});
+}));

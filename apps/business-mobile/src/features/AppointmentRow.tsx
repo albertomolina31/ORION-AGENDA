@@ -4,6 +4,7 @@ import { Lock, Plus } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 import { fmt } from '@/lib/format';
 import { Avatar, colors, PressableScale, proColor, radius, shadow, spacing, StatusBadge, Text } from '@/ui';
+import { themed } from '@/ui';
 
 /**
  * Fila de agenda compacta: hora, cliente, servicio, profesional y estado. Tocar abre
@@ -101,7 +102,7 @@ export function FreeSlot({ from, to, onPress }: { from: string; to: string; onPr
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.sm },
   timeCol: { width: 48, paddingTop: spacing.sm + 2 },
   card: {
@@ -117,7 +118,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     ...shadow.card,
   },
-  pending: { backgroundColor: '#FFFBF3', borderColor: colors.accentBorder },
+  pending: { backgroundColor: colors.pendingSurface, borderColor: colors.accentBorder },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   meta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   nowRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginVertical: -2 },
@@ -147,4 +148,4 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     borderColor: colors.primaryBorder,
   },
-});
+}));

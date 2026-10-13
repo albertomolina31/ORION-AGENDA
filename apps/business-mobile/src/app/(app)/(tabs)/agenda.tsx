@@ -28,6 +28,7 @@ import {
   Text,
   haptic,
 } from '@/ui';
+import { themed } from '@/ui';
 
 const COLLAPSED_ROWS = 8;
 const MIN_GAP_MIN = 30;
@@ -319,7 +320,7 @@ function WeekSummary({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   todayBtn: {
     minHeight: 36,
     paddingHorizontal: spacing.lg,
@@ -333,7 +334,7 @@ const styles = StyleSheet.create({
   arrow: { width: 44, height: 40, alignItems: 'center', justifyContent: 'center' },
   weekRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 2 },
   dayCell: { flex: 1, alignItems: 'center', paddingVertical: spacing.xs + 2, borderRadius: radius.md, gap: 0, minHeight: 50 },
-  dayCellActive: { backgroundColor: '#F4F1FF' },
+  dayCellActive: { backgroundColor: colors.highlightSurface },
   todayDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.accent },
   chips: { flexDirection: 'row', gap: spacing.sm },
   pending: {
@@ -350,4 +351,4 @@ const styles = StyleSheet.create({
   dayHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: spacing.sm },
   more: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, minHeight: 44 },
   weekDay: { padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, gap: 4 },
-});
+}));

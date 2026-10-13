@@ -5,6 +5,7 @@ import { haptic, PressableScale, usePop, useShake } from './motion';
 import { Pressable, StyleSheet, Switch, TextInput, type TextInputProps, View } from 'react-native';
 import { Text } from './Text';
 import { colors, radius, spacing, touchTarget } from './theme';
+import { themed } from './theme';
 
 /** Icono dentro de un círculo/cuadro suave, como en los mockups. */
 export function IconCircle({
@@ -20,7 +21,7 @@ export function IconCircle({
 }) {
   const t = {
     primary: { bg: colors.primarySoft, fg: colors.primary },
-    warning: { bg: '#FCE7C2', fg: '#C77A0A' },
+    warning: { bg: colors.warningSurface, fg: colors.warningInk },
     success: { bg: colors.successSoft, fg: colors.success },
     whatsapp: { bg: colors.whatsappSoft, fg: colors.whatsapp },
     neutral: { bg: colors.neutralSoft, fg: colors.neutral },
@@ -213,7 +214,7 @@ export function Note({
 }) {
   const bg = tone === 'info' ? colors.primarySoft : colors.accentSoft;
   const border = tone === 'info' ? colors.primarySoft : colors.accentBorder;
-  const fg = tone === 'info' ? colors.primary : '#C77A0A';
+  const fg = tone === 'info' ? colors.primary : colors.warningInk;
   return (
     <View style={[styles.note, { backgroundColor: bg, borderColor: border }]} accessibilityRole="text">
       {Icon ? <Icon size={22} color={fg} /> : null}
@@ -334,7 +335,7 @@ export function Divider() {
   return <View style={{ height: 1, backgroundColor: colors.border }} />;
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
   link: { flexDirection: 'row', alignItems: 'center', gap: 2, minHeight: touchTarget - 8 },
   chip: {
@@ -401,4 +402,4 @@ const styles = StyleSheet.create({
   radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: colors.textSubtle, alignItems: 'center', justifyContent: 'center' },
   radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primary },
   radioIcon: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
-});
+}));

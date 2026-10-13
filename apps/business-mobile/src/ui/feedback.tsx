@@ -23,6 +23,7 @@ import { haptic, useShake } from './motion';
 import { Ori } from './Ori';
 import { Text } from './Text';
 import { colors, radius, shadow, spacing } from './theme';
+import { themed } from './theme';
 
 /**
  * Feedback global: toasts, hoja inferior de confirmación y celebración.
@@ -126,7 +127,7 @@ function Toast({ message, tone }: { message: string; tone: ToastTone }) {
   );
 }
 
-const CONFETTI_COLORS = [colors.accent, '#F7C35A', colors.primary, '#8C7BEA', '#7FE0A6'];
+const CONFETTI_COLORS = themed(() => [colors.accent, '#F7C35A', colors.primary, '#8C7BEA', '#7FE0A6']);
 
 /** Pieza de confeti que sale disparada desde el centro y cae con gravedad. */
 function ConfettiPiece({ i, cx, cy }: { i: number; cx: number; cy: number }) {
@@ -257,7 +258,7 @@ function ConfirmSheet({ options, onClose }: { options: (ConfirmOptions & { resol
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   toast: {
     position: 'absolute',
     left: spacing.lg,
@@ -287,4 +288,4 @@ const styles = StyleSheet.create({
   grabber: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: colors.border, marginBottom: spacing.sm },
   reason: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginTop: spacing.xs },
   reasonInput: { fontSize: 16, color: colors.text, paddingVertical: 4 },
-});
+}));

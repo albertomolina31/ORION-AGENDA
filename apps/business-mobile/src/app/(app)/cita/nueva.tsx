@@ -11,6 +11,7 @@ import { useIdempotentMutation } from '@/lib/mutations';
 import { useCustomers, useHome, useProfessionals, useServices } from '@/lib/queries';
 import { useBusiness } from '@/lib/session';
 import { Avatar, Button, Card, Chip, colors, Divider, haptic, LinkButton, Note, radius, Screen, spacing, StackHeader, Text, useFeedback } from '@/ui';
+import { themed } from '@/ui';
 
 type Step = 1 | 2 | 3 | 4;
 const steps = ['Cliente', 'Servicio', 'Horario', 'Resumen'];
@@ -289,7 +290,7 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   search: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
   option: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, minHeight: 64 },
   divider: { borderTopWidth: 1, borderTopColor: colors.border },
@@ -297,4 +298,4 @@ const styles = StyleSheet.create({
   serviceActive: { borderColor: colors.primary, backgroundColor: colors.surfaceMuted },
   stepper: { flexDirection: 'row', alignItems: 'flex-start' },
   stepDot: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, borderColor: colors.primaryBorder, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface },
-});
+}));

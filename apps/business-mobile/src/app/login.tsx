@@ -10,6 +10,7 @@ import { API_URL } from '@/lib/config';
 import { endpoints } from '@/lib/endpoints';
 import { useSession } from '@/lib/session';
 import { Avatar, Card, colors, ErrorState, Note, Ori, radius, spacing, Text } from '@/ui';
+import { themed } from '@/ui';
 
 /**
  * UI01 en modo SIMULADO: selector de usuarios sintéticos.
@@ -94,9 +95,9 @@ export default function Login() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   container: { flex: 1, padding: spacing.xl, gap: spacing.xl, justifyContent: 'center', maxWidth: 520, width: '100%', alignSelf: 'center' },
   user: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg, borderRadius: radius.lg },
   divider: { borderTopWidth: 1, borderTopColor: colors.border },
-});
+}));

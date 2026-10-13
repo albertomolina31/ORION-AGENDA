@@ -1,6 +1,7 @@
 import { Minus, Plus } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { colors, haptic, radius, spacing, Text } from '@/ui';
+import { themed } from '@/ui';
 
 const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
 const toTime = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
@@ -74,7 +75,7 @@ export function NumberStepper({ value, onChange, step = 5, min = 0, max = 600, s
 
 export { toMin, toTime };
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   wrap: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, padding: 3, backgroundColor: colors.surface },
   btn: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
-});
+}));

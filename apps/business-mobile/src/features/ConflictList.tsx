@@ -14,7 +14,7 @@ export function ConflictList({ conflicts, tz, title }: { conflicts: ScheduleConf
   return (
     <Card tone="warning">
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm }}>
-        <TriangleAlert size={20} color="#C77A0A" />
+        <TriangleAlert size={20} color={colors.warningInk} />
         <Text variant="subheading" style={{ flex: 1 }}>
           {title}
         </Text>

@@ -6,6 +6,7 @@ import { endpoints } from '@/lib/endpoints';
 import { useBusiness } from '@/lib/session';
 import { useServices } from '@/lib/queries';
 import { Badge, Button, Card, Chip, colors, Divider, ErrorState, Field, IconCircle, LoadingState, Note, radius, Screen, spacing, StackHeader, Text } from '@/ui';
+import { themed } from '@/ui';
 
 /**
  * Configurar programa (diseño aprobado). Las reglas pertenecen al módulo de Sergio:
@@ -166,9 +167,9 @@ function StepTitle({ n, title }: { n: number; title: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   inline: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingBottom: spacing.md },
   stepBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
   stepValue: { minWidth: 64, height: 52, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   stepNum: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
-});
+}));

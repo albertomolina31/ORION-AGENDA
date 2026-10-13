@@ -60,6 +60,12 @@ Pantallas adicionales del inventario: detalle de cita y acciones (UI07), nueva c
 - **Eliminación = anonimización:** se borran nombre, teléfono, correo y notas; se conservan citas, importes y sellos como "Cliente eliminado". Se rechaza si hay citas próximas y exige escribir el nombre para confirmar. Una cancelación no se puede dar por atendida hasta eliminar los datos.
 - **No se inventan plazos legales ni retención:** la pantalla lista las políticas pendientes de revisión especializada antes del piloto.
 
+## Iteración 13-oct-2026: modo oscuro
+
+- Paleta oscura propuesta en `packages/design-tokens` (`darkColors`, `darkProfessionalColors`): azul noche profundo en lugar de negro, violeta más claro para contraste y dorado de acento. Validar contraste en dispositivo.
+- Preferencia por teléfono en *Cuenta → Apariencia*: Automático (sigue al sistema), Claro u Oscuro.
+- Implementación: `colors` es un objeto vivo y los estilos de módulo se envuelven con `themed()` (se recalculan por tema sin reescribir pantallas). Al cambiar de tema se vuelve a montar el navegador y se regresa a la misma pantalla; la sesión y la caché se conservan. Colores escritos a mano pasaron a tokens.
+
 ## Siguiente bloque sugerido
 
 1. Retomar D09: esquema PostgreSQL, migraciones y pruebas de concurrencia reales (P09, P22).

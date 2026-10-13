@@ -34,6 +34,7 @@ import {
   Toggle,
   useFeedback,
 } from '@/ui';
+import { themed } from '@/ui';
 
 type Step = 1 | 2 | 3 | 4;
 const STEP_LABELS = ['Detalles', 'Audiencia', 'Mensaje', 'Revisión'];
@@ -500,9 +501,9 @@ function ReviewCard({ icon, title, onEdit, children }: { icon: typeof Users; tit
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   dot: { width: 38, height: 38, borderRadius: 19, borderWidth: 2, borderColor: colors.primaryBorder, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface },
   wa: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.whatsappSoft, alignItems: 'center', justifyContent: 'center' },
-  chatBg: { padding: spacing.xl, borderRadius: radius.lg, backgroundColor: '#EEF3EC' },
+  chatBg: { padding: spacing.xl, borderRadius: radius.lg, backgroundColor: colors.chatBackground },
   bubble: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.sm, ...{ shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 } },
-});
+}));

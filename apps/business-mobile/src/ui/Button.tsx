@@ -4,6 +4,7 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { haptic } from './motion';
 import { Text } from './Text';
 import { colors, radius, spacing } from './theme';
+import { themed } from './theme';
 
 type Variant = 'primary' | 'secondary' | 'outline' | 'destructive' | 'ghost';
 
@@ -85,14 +86,14 @@ export function Button({
   );
 }
 
-const variants: Record<Variant, { bg: string; fg: string; border: string; depth: string }> = {
+const variants: Record<Variant, { bg: string; fg: string; border: string; depth: string }> = themed(() => ({
   primary: { bg: colors.primary, fg: colors.textOnPrimary, border: colors.primary, depth: colors.primaryDepth },
   secondary: { bg: colors.primarySoft, fg: colors.primary, border: colors.primarySoft, depth: colors.primarySoftStrong },
   outline: { bg: colors.surface, fg: colors.primary, border: colors.primaryBorder, depth: colors.primaryBorder },
-  destructive: { bg: colors.surface, fg: colors.danger, border: '#F2B8C0', depth: '#F2B8C0' },
+  destructive: { bg: colors.surface, fg: colors.danger, border: colors.dangerBorder, depth: colors.dangerBorder },
   ghost: { bg: 'transparent', fg: colors.primary, border: 'transparent', depth: 'transparent' },
-};
-const disabledStyle = { bg: colors.neutralSoft, fg: colors.textSubtle, border: colors.neutralSoft, depth: '#DCDAE3' };
+}));
+const disabledStyle = themed(() => ({ bg: colors.neutralSoft, fg: colors.textSubtle, border: colors.neutralSoft, depth: colors.disabledDepth }));
 
 const styles = StyleSheet.create({
   depth: { borderRadius: radius.lg },

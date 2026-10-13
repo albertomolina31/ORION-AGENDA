@@ -22,6 +22,7 @@ import {
   spacing,
   Text,
 } from '@/ui';
+import { themed } from '@/ui';
 
 const PAGE = 5;
 const SORTS = ['NAME', 'NEXT_APPOINTMENT', 'LAST_VISIT'] as const;
@@ -186,7 +187,7 @@ export default function Clientes() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   countPill: { paddingHorizontal: spacing.md, paddingVertical: 4, borderRadius: radius.pill, backgroundColor: colors.primarySoft },
   smallCount: { paddingHorizontal: spacing.md, paddingVertical: 2, borderRadius: radius.pill, backgroundColor: colors.primarySoft },
   search: {
@@ -220,4 +221,4 @@ const styles = StyleSheet.create({
   listHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
   sort: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, minHeight: 44 },
   pager: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-});
+}));

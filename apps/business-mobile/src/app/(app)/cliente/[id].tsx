@@ -26,6 +26,7 @@ import {
   StatusBadge,
   Text,
 } from '@/ui';
+import { themed } from '@/ui';
 
 /** UI11 Ficha: contacto, preferencias, fidelidad e historial dentro de este negocio. */
 export default function CustomerDetail() {
@@ -230,10 +231,10 @@ function PrefRow({ icon, label, value }: { icon: typeof User; label: string; val
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   stats: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   stat: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   vr: { width: 1, height: 48, backgroundColor: colors.border },
   histRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md },
   divider: { borderTopWidth: 1, borderTopColor: colors.border },
-});
+}));

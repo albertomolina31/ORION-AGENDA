@@ -33,6 +33,7 @@ import {
   StampRow,
   Text,
 } from '@/ui';
+import { themed } from '@/ui';
 
 /** UI20 Marketing: Campañas y Fidelidad, según funciones habilitadas y permisos. */
 export default function Marketing() {
@@ -321,8 +322,8 @@ function Tile({ icon: Icon, label, onPress }: { icon: typeof Users; label: strin
   );
 }
 
-const styles = StyleSheet.create({
-  waBubble: { width: 110, height: 110, borderRadius: 55, backgroundColor: '#F2FBF5', alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: colors.accent },
+const styles = themed(() => StyleSheet.create({
+  waBubble: { width: 110, height: 110, borderRadius: 55, backgroundColor: colors.whatsappSoft, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: colors.accent },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs + 2, flexWrap: 'wrap' },
   vr: { width: 1, height: 18, backgroundColor: colors.border, marginHorizontal: spacing.xs },
   programHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
@@ -338,4 +339,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   walletIcon: { width: 34, height: 34, borderRadius: radius.md, backgroundColor: colors.night, alignItems: 'center', justifyContent: 'center' },
-});
+}));

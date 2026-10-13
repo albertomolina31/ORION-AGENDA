@@ -3,16 +3,17 @@ import { appointmentStatusLabel, campaignStatusLabel } from '@orion/contracts';
 import { StyleSheet, View } from 'react-native';
 import { Text } from './Text';
 import { colors, radius, spacing } from './theme';
+import { themed } from './theme';
 
 export type BadgeTone = 'success' | 'warning' | 'neutral' | 'primary' | 'danger';
 
-const tones: Record<BadgeTone, { bg: string; fg: string; dot: string }> = {
-  success: { bg: colors.successSoft, fg: '#17683A', dot: colors.success },
+const tones: Record<BadgeTone, { bg: string; fg: string; dot: string }> = themed(() => ({
+  success: { bg: colors.successSoft, fg: colors.successInk, dot: colors.success },
   warning: { bg: colors.accentSoft, fg: colors.accentInk, dot: colors.accent },
   neutral: { bg: colors.neutralSoft, fg: colors.neutral, dot: colors.neutral },
   primary: { bg: colors.primarySoftStrong, fg: colors.primaryPressed, dot: colors.primary },
   danger: { bg: colors.dangerSoft, fg: colors.danger, dot: colors.danger },
-};
+}));
 
 /** Estado siempre con texto además del color. */
 export function Badge({ label, tone = 'neutral', dot = true }: { label: string; tone?: BadgeTone; dot?: boolean }) {

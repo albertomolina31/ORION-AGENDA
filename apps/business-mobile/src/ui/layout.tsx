@@ -11,6 +11,7 @@ import { useSession } from '@/lib/session';
 import { OfflineBanner } from './OfflineBanner';
 import { Text } from './Text';
 import { colors, radius, spacing, touchTarget } from './theme';
+import { themed } from './theme';
 
 const COLLAPSE_AT = 56;
 
@@ -210,7 +211,7 @@ export function NightCard({ children, style, minHeight }: { children: ReactNode;
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   content: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, gap: spacing.lg + 2 },
   footer: {
@@ -265,4 +266,4 @@ const styles = StyleSheet.create({
   stackHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, backgroundColor: colors.background },
   backBtn: { width: touchTarget, height: touchTarget, alignItems: 'center', justifyContent: 'center' },
   night: { borderRadius: radius.xl, overflow: 'hidden', padding: spacing.lg + 2 },
-});
+}));

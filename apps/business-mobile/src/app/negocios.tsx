@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { useSession } from '@/lib/session';
 import { Card, colors, EmptyState, IconCircle, Screen, spacing, StackHeader, Text } from '@/ui';
+import { themed } from '@/ui';
 
 /** UI02: negocios autorizados; cada selección revalida la membresía con el servidor. */
 export default function Negocios() {
@@ -61,7 +62,7 @@ export default function Negocios() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg },
   divider: { borderTopWidth: 1, borderTopColor: colors.border },
-});
+}));

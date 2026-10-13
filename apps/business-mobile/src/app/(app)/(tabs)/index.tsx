@@ -30,6 +30,7 @@ import {
   StatusBadge,
   Text,
 } from '@/ui';
+import { themed } from '@/ui';
 
 /** Mensaje contextual de Ori: prioriza lo que requiere atención. */
 function oriMessage(h: HomeSummary): { pose: OriPose; text: string } {
@@ -213,7 +214,7 @@ function Quick({ icon: Icon, label, onPress, primary }: { icon: typeof Plus; lab
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   activePill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -262,4 +263,4 @@ const styles = StyleSheet.create({
     ...shadow.card,
   },
   waCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.whatsappSoft, alignItems: 'center', justifyContent: 'center' },
-});
+}));

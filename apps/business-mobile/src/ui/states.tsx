@@ -6,6 +6,7 @@ import { Shimmer } from './motion';
 import { Ori, type OriPose } from './Ori';
 import { Text } from './Text';
 import { colors, radius, spacing } from './theme';
+import { themed } from './theme';
 
 export function LoadingState({ label = 'Cargando…' }: { label?: string }) {
   return (
@@ -84,7 +85,7 @@ export function SimulationBanner() {
   return null;
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   center: { padding: spacing.xxl, alignItems: 'center', gap: spacing.sm, flex: 1, justifyContent: 'center', backgroundColor: colors.background },
   skeleton: { height: 68, borderRadius: radius.lg, backgroundColor: colors.primarySoft },
   empty: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.lg, paddingHorizontal: spacing.xl },
@@ -97,4 +98,4 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-});
+}));

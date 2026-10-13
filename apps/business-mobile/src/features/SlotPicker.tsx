@@ -2,6 +2,7 @@ import type { AvailabilityResponse } from '@orion/contracts';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { addDays, capitalize, noonOf } from '@/lib/format';
 import { colors, EmptyState, ErrorState, radius, SkeletonList, spacing, Text } from '@/ui';
+import { themed } from '@/ui';
 
 export function DateStrip({ start, days = 14, value, onChange }: { start: string; days?: number; value: string; onChange: (d: string) => void }) {
   const fmtDay = new Intl.DateTimeFormat('es-MX', { timeZone: 'UTC', weekday: 'short' });
@@ -81,7 +82,7 @@ export function SlotGrid({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   day: {
     width: 60,
     minHeight: 68,
@@ -105,4 +106,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   slotActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-});
+}));

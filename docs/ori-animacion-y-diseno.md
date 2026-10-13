@@ -62,8 +62,11 @@ Faltan (opcional): Ori con megáfono (campañas), escenas horizontales de onboar
 - Errores: el campo con error y el toast de error se sacuden (con vibración); íconos y chips con rebote al aparecer o seleccionarse.
 - Botón 3D con profundidad y vibración; en modo sin conexión muestra "Sin conexión" y no se puede presionar.
 
+## Hecho: modo oscuro (13-oct-2026)
+
+Paleta oscura en los tokens, preferencia Automático/Claro/Oscuro en Cuenta y `themed()` para estilos de módulo. Ver `decisiones.md`.
+
 ## Siguientes ideas de diseño
 
 - Onboarding / alta guiada (UI03) con Ori paso a paso.
-- Modo oscuro.
 - Escenas horizontales de onboarding y Ori con megáfono (pendientes de arte).
