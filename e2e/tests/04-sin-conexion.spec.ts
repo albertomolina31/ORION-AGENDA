@@ -6,9 +6,10 @@ test('sin conexión: se muestran datos guardados y las acciones se bloquean (P42
   await page.getByText('Jorge Salas').first().click();
   await expect(page.getByText('Aprobar', { exact: true }).first()).toBeVisible();
   await context.setOffline(true);
-  await expect(page.getByText('Sin conexión a internet')).toBeVisible();
+  // Cada pantalla de la pila muestra su aviso; basta con el de la pantalla visible.
+  await expect(page.getByText('Sin conexión a internet').last()).toBeVisible();
   await expect(page.getByText('Sin conexión', { exact: true }).first()).toBeVisible();
   await context.setOffline(false);
-  await expect(page.getByText('Sin conexión a internet')).toBeHidden();
+  await expect(page.getByText('Sin conexión a internet')).toHaveCount(0);
   await expect(page.getByText('Aprobar', { exact: true }).first()).toBeVisible();
 });

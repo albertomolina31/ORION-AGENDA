@@ -73,6 +73,12 @@ Pantallas adicionales del inventario: detalle de cita y acciones (UI07), nueva c
 - **Unir duplicados** (`customers.merge`, dueño y administración), nunca automático: vista previa, elegir cuál se conserva y confirmación. Mueve citas (versión nueva y constancia en su historial), notas, consentimientos y solicitudes; completa campos vacíos; "la baja prevalece" en promociones; el duplicado deja de aparecer en listas, audiencias y agenda (enlaces viejos llevan al registro conservado).
 - **Fidelidad:** si solo el duplicado tiene tarjeta, pasa al conservado; si ambos tienen, **no se une** hasta que el módulo de Sergio defina cómo combinar sellos (P de la sección 25: merges revisados con Sergio).
 
+## Iteración 13-oct-2026: pruebas automáticas
+
+- `e2e/` con Playwright: 14 flujos de la app web contra la API simulada (≈30 s), estables en dos corridas seguidas. Cada prueba reinicia los datos (`POST /v1/simulation/reset`, solo con `ORION_ALLOW_RESET=1`).
+- CI: `checks` (tipos, 83 + 13 pruebas, OpenAPI), `e2e` (con reporte si fallan) y `widgets-ios` (bundle iOS y ejecución de los widgets serializados).
+- Lo que no cubren: dispositivos reales, gestos nativos, widgets en pantalla de inicio (requieren development build; ver `emuladores.md`).
+
 ## Siguiente bloque sugerido
 
 1. Retomar D09: esquema PostgreSQL, migraciones y pruebas de concurrencia reales (P09, P22).
