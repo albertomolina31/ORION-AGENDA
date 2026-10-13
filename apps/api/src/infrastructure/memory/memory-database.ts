@@ -8,6 +8,7 @@ import type {
   CalendarOccupancy,
   ConsentRecord,
   Customer,
+  CustomerNoteRecord,
   PrivacyRequestRecord,
   IdempotencyRecord,
   Membership,
@@ -43,6 +44,7 @@ export interface MemoryState {
   idempotency: IdempotencyRecord[];
   notificationReads: NotificationRead[];
   consents: ConsentRecord[];
+  customerNotes: CustomerNoteRecord[];
   privacyRequests: PrivacyRequestRecord[];
 }
 
@@ -64,6 +66,7 @@ export function emptyState(): MemoryState {
     idempotency: [],
     notificationReads: [],
     consents: [],
+    customerNotes: [],
     privacyRequests: [],
   };
 }
@@ -205,6 +208,23 @@ export class MemoryDatabase implements UnitOfWork {
           if (i < 0) throw new Error(`Unknown customer ${c.id}`);
           s().customers[i] = clone(c);
         },
+        listNotes: async (bid, cid) =>
+          clone(s().customerNotes.filter((n) => n.businessId === bid && n.customerId === cid && !n.deletedAt)).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
+        saveNote: async (n) => {
+          const i = s().customerNotes.findIndex((x) => x.id === n.id);
+          if (i < 0) s().customerNotes.push(clone(n));
+          else s().customerNotes[i] = clone(n);
+        },
+        reassignNotes: async (bid, from, to) => {
+          let moved = 0;
+          s().customerNotes.forEach((n) => {
+            if (n.businessId === bid && n.customerId === from) {
+              n.customerId = to;
+              if (!n.deletedAt) moved += 1;
+            }
+          });
+          return moved;
+        },
       },
       privacy: {
         consentHistory: async (bid, cid) =>
@@ -218,6 +238,14 @@ export class MemoryDatabase implements UnitOfWork {
           const i = s().privacyRequests.findIndex((x) => x.id === r.id);
           if (i < 0) s().privacyRequests.push(clone(r));
           else s().privacyRequests[i] = clone(r);
+        },
+        reassignCustomer: async (bid, from, to) => {
+          s().consents.forEach((r) => {
+            if (r.businessId === bid && r.customerId === from) r.customerId = to;
+          });
+          s().privacyRequests.forEach((r) => {
+            if (r.businessId === bid && r.customerId === from) r.customerId = to;
+          });
         },
       },
       appointments: {

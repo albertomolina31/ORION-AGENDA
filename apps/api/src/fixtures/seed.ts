@@ -212,6 +212,13 @@ export function buildSeed(now: Date): SeedResult {
   }
   customer(LUNA, 'Mariana López', { note: null, promotionalConsent: 'NOT_GRANTED' });
   customer(LUNA, 'Roberto Chávez', { promotionalConsent: 'NOT_GRANTED' });
+  // Duplicado de ejemplo: llegó por WhatsApp con el mismo teléfono que Diego (no se une solo).
+  const diegoDup = customer(ORBITA, 'Diego Torres', {
+    phoneE164: named.diego.phoneE164,
+    email: 'diego.torres@correo.test',
+    promotionalConsent: 'NOT_GRANTED',
+    createdAt: today.minus({ days: 20 }).toJSDate(),
+  });
 
   // ── Citas ──
   let aptSeq = 0;
@@ -499,6 +506,13 @@ export function buildSeed(now: Date): SeedResult {
       },
     ],
   };
+
+  // ── Notas internas por rol ──
+  s.customerNotes.push(
+    { id: 'note_seed_1', businessId: ORBITA, customerId: named.mariana.id, body: 'Prefiere que le laven el cabello con agua tibia. Le gusta el café sin azúcar.', visibility: 'TEAM', authorId: 'u_ana', authorName: 'Ana', createdAt: today.minus({ days: 22 }).set({ hour: 11 }).toJSDate(), deletedAt: null },
+    { id: 'note_seed_2', businessId: ORBITA, customerId: named.mariana.id, body: 'Una vez pagó con tarjeta rechazada; en servicios de más de $800 pedir anticipo.', visibility: 'ADMINS', authorId: 'u_alberto', authorName: 'Alberto', createdAt: today.minus({ days: 40 }).set({ hour: 18 }).toJSDate(), deletedAt: null },
+  );
+  void diegoDup;
 
   // ── Privacidad: historial de consentimiento y solicitudes de derechos (sección 14) ──
   let cnsSeq = 0;

@@ -5,7 +5,7 @@ import { DomainError } from '../domain/errors.js';
 import type { IdGenerator } from '../domain/ids.js';
 import { ACTIVE_STATUSES } from '../domain/lifecycle.js';
 import { localDateTime } from '../domain/local-time.js';
-import type { ActorContext } from '../domain/model.js';
+import { type ActorContext, isActiveCustomer } from '../domain/model.js';
 import { requirePermission } from '../domain/permissions.js';
 import type { IdempotencyService } from './idempotency-service.js';
 import type { LoyaltySimulation } from './loyalty-simulation.js';
@@ -61,13 +61,14 @@ export class CampaignService {
       this.repos.appointments.listAll(actor.businessId),
     ]);
     const now = this.clock.now().getTime();
-    let matched = customers;
+    let matched = customers.filter(isActiveCustomer);
     if (def.mode === 'MANUAL') {
       const ids = new Set(def.customerIds);
-      matched = customers.filter((c) => ids.has(c.id));
+      matched = customers.filter((c) => isActiveCustomer(c) && ids.has(c.id));
     } else {
       const memberships = def.segment === 'NEAR_REWARD' ? await this.loyalty.listMemberships(actor) : [];
       matched = customers.filter((c) => {
+        if (!isActiveCustomer(c)) return false;
         const mine = appts.filter((a) => a.customerId === c.id);
         const completed = mine.filter((a) => a.status === 'COMPLETED');
         const last = Math.max(0, ...completed.map((a) => a.startsAt.getTime()));

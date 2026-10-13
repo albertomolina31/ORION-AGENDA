@@ -1,8 +1,10 @@
 import { appointmentStatusLabel } from '@orion/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { CalendarDays, ChevronRight, Clock, FileText, MessageCircle, Plus, ShieldCheck, Star, User } from 'lucide-react-native';
+import { CalendarDays, ChevronRight, Clock, FileText, Merge, MessageCircle, Pencil, Plus, ShieldCheck, Star, User } from 'lucide-react-native';
 import { ConsentBadge, ConsentHistory } from '@/features/privacy';
+import { CustomerNotes } from '@/features/CustomerNotes';
+import { ApiError } from '@/lib/api-client';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { endpoints } from '@/lib/endpoints';
 import { fmt, localDate, noonOf, relativeDayLabel } from '@/lib/format';
@@ -47,6 +49,14 @@ export default function CustomerDetail() {
   const canPrivacy = m.permissions.includes('privacy.manage');
 
   if (q.isLoading) return <LoadingState />;
+  const mergedInto = q.error instanceof ApiError ? (q.error.details?.mergedIntoId as string | undefined) : undefined;
+  if (mergedInto)
+    return (
+      <Screen header={<StackHeader title={`Ficha del ${m.vocabulary.customerSingular.toLowerCase()}`} />}>
+        <Note title="Registro unido" body="Este registro se unió con otro del mismo cliente. Su historial está en el registro que se conservó." />
+        <Button label="Ver registro unido" onPress={() => router.replace(`/cliente/${mergedInto}`)} />
+      </Screen>
+    );
   if (q.error || !c)
     return (
       <Screen header={<StackHeader title={`Ficha del ${m.vocabulary.customerSingular.toLowerCase()}`} />}>
@@ -59,7 +69,19 @@ export default function CustomerDetail() {
 
   return (
     <Screen
-      header={<StackHeader title={`Ficha del ${m.vocabulary.customerSingular.toLowerCase()}`} subtitle={m.businessName} />}
+      header={
+        <StackHeader
+          title={`Ficha del ${m.vocabulary.customerSingular.toLowerCase()}`}
+          subtitle={m.businessName}
+          right={
+            canConsent && !c.anonymized ? (
+              <Pressable onPress={() => router.push(`/cliente/editar?id=${c.id}`)} accessibilityRole="button" accessibilityLabel="Editar ficha" hitSlop={10} style={{ padding: spacing.sm }}>
+                <Pencil size={20} color={colors.primary} />
+              </Pressable>
+            ) : undefined
+          }
+        />
+      }
       onRefresh={() => {
         void q.refetch();
         void loyalty.refetch();
@@ -84,7 +106,14 @@ export default function CustomerDetail() {
       ) : null}
 
       {c.possibleDuplicates.length > 0 ? (
-        <Note tone="warning" title="Posible duplicado" body={`Revisa: ${c.possibleDuplicates.map((d) => d.name).join(', ')}. No se fusiona automáticamente.`} />
+        <View style={{ gap: spacing.sm }}>
+          <Note tone="warning" title="Posible duplicado" body={`Revisa: ${c.possibleDuplicates.map((d) => d.name).join(', ')}. Mismo teléfono o nombre; no se une automáticamente.`} />
+          {m.permissions.includes('customers.merge')
+            ? c.possibleDuplicates.map((d) => (
+                <Button key={d.id} label={`Revisar y unir con ${d.name}`} icon={Merge} variant="outline" onPress={() => router.push(`/cliente/unir?id=${c.id}&with=${d.id}`)} />
+              ))
+            : null}
+        </View>
       ) : null}
 
       <View style={styles.stats}>
@@ -135,6 +164,8 @@ export default function CustomerDetail() {
         <Divider />
         <PrefRow icon={FileText} label={`Nota del ${m.vocabulary.customerSingular.toLowerCase()}`} value={c.note ?? 'Sin notas'} />
       </Card>
+
+      {!c.anonymized ? <CustomerNotes customer={c} /> : null}
 
       {m.features.loyalty ? (
         <Card onPress={() => router.push('/marketing')}>

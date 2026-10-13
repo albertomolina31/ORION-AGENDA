@@ -66,6 +66,13 @@ Pantallas adicionales del inventario: detalle de cita y acciones (UI07), nueva c
 - Preferencia por teléfono en *Cuenta → Apariencia*: Automático (sigue al sistema), Claro u Oscuro.
 - Implementación: `colors` es un objeto vivo y los estilos de módulo se envuelven con `themed()` (se recalculan por tema sin reescribir pantallas). Al cambiar de tema se vuelve a montar el navegador y se regresa a la misma pantalla; la sesión y la caché se conservan. Colores escritos a mano pasaron a tokens.
 
+## Iteración 13-oct-2026: ficha de cliente completa
+
+- **Editar ficha** (nombre, teléfono normalizado, correo, nota operativa, profesional preferido) con `customers.manage`; sirve para atender rectificaciones. El consentimiento sigue aparte, con constancia.
+- **Notas internas por rol:** "Todo el equipo" (incluido el profesional que atiende, que también puede escribirlas) o "Solo dueño y administración" (`customers.notes_admin`). Las borra el autor o la administración; sin datos clínicos.
+- **Unir duplicados** (`customers.merge`, dueño y administración), nunca automático: vista previa, elegir cuál se conserva y confirmación. Mueve citas (versión nueva y constancia en su historial), notas, consentimientos y solicitudes; completa campos vacíos; "la baja prevalece" en promociones; el duplicado deja de aparecer en listas, audiencias y agenda (enlaces viejos llevan al registro conservado).
+- **Fidelidad:** si solo el duplicado tiene tarjeta, pasa al conservado; si ambos tienen, **no se une** hasta que el módulo de Sergio defina cómo combinar sellos (P de la sección 25: merges revisados con Sergio).
+
 ## Siguiente bloque sugerido
 
 1. Retomar D09: esquema PostgreSQL, migraciones y pruebas de concurrencia reales (P09, P22).

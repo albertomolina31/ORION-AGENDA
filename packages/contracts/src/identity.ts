@@ -13,6 +13,10 @@ export const Permission = z.enum([
   'appointments.approve',
   'customers.view_all',
   'customers.manage',
+  /** Unir clientes duplicados (preserva citas, notas y fidelidad). */
+  'customers.merge',
+  /** Ver y escribir notas internas "solo dueño y administración". */
+  'customers.notes_admin',
   'catalog.manage',
   'schedules.manage',
   'team.manage',

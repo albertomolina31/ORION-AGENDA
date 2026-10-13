@@ -185,7 +185,9 @@ export class AppointmentService {
       await this.expireDue(actor.businessId, now);
 
       const customer = await this.repos.customers.get(actor.businessId, req.customerId);
-      if (!customer) throw new DomainError('VALIDATION_ERROR', 'Cliente no encontrado en este negocio.', undefined, { customerId: ['No existe'] });
+      if (!customer || customer.anonymizedAt || customer.mergedIntoId) {
+        throw new DomainError('VALIDATION_ERROR', 'Cliente no encontrado en este negocio.', undefined, { customerId: ['No existe'] });
+      }
       const start = new Date(req.startsAt).getTime();
       const date = toLocalDate(start, business.timezone);
       // Revalidar reglas vigentes dentro de la operación.

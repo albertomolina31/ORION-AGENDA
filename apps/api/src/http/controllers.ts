@@ -24,6 +24,9 @@ import {
   SaveCampaignRequest,
   TransitionRequest,
   AnonymizeCustomerRequest,
+  CreateCustomerNoteRequest,
+  MergeCustomersRequest,
+  UpdateCustomerRequest,
   CreatePrivacyRequest,
   PrivacyRequestAction,
   PrivacyRequestTransition,
@@ -308,6 +311,34 @@ export class CustomersController {
   @Get(':customerId')
   get(@Actor() a: ActorContext, @Param('customerId') id: string) {
     return this.c.customers.get(a, id);
+  }
+
+  @Patch(':customerId')
+  update(@Actor() a: ActorContext, @Param('customerId') id: string, @Body(new ZodPipe(UpdateCustomerRequest)) body: z.input<typeof UpdateCustomerRequest>) {
+    return this.c.customers.update(a, id, body);
+  }
+
+  @Post(':customerId/notes')
+  @HttpCode(201)
+  addNote(@Actor() a: ActorContext, @Param('customerId') id: string, @Body(new ZodPipe(CreateCustomerNoteRequest)) body: z.input<typeof CreateCustomerNoteRequest>) {
+    return this.c.customers.addNote(a, id, body);
+  }
+
+  @Post(':customerId/notes/:noteId/delete')
+  @HttpCode(200)
+  deleteNote(@Actor() a: ActorContext, @Param('customerId') id: string, @Param('noteId') noteId: string, @Body(new ZodPipe(SimpleCommand)) body: z.infer<typeof SimpleCommand>) {
+    return this.c.customers.deleteNote(a, id, noteId, body.requestId);
+  }
+
+  @Get(':customerId/merge-preview')
+  mergePreview(@Actor() a: ActorContext, @Param('customerId') id: string, @Query('with') duplicateId: string) {
+    return this.c.customerMerge.preview(a, id, duplicateId ?? '');
+  }
+
+  @Post(':customerId/merge')
+  @HttpCode(200)
+  merge(@Actor() a: ActorContext, @Param('customerId') id: string, @Body(new ZodPipe(MergeCustomersRequest)) body: z.input<typeof MergeCustomersRequest>) {
+    return this.c.customerMerge.merge(a, id, body);
   }
 
   // ── Privacidad (sección 14) ──

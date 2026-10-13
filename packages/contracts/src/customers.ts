@@ -98,6 +98,8 @@ export const CustomerDetail = CustomerSummary.extend({
   consentHistory: z.array(ConsentEvent),
   /** Datos personales eliminados por solicitud; se conservan citas sin identificar a la persona. */
   anonymized: z.boolean(),
+  /** Notas internas que este usuario puede ver (según su rol). */
+  notes: z.array(z.lazy(() => CustomerNote)),
 });
 export type CustomerDetail = z.infer<typeof CustomerDetail>;
 
@@ -114,3 +116,74 @@ export const CreateCustomerRequest = z.object({
   promotionalConsent: z.boolean().default(false),
 });
 export type CreateCustomerRequest = z.input<typeof CreateCustomerRequest>;
+
+// ── Edición de la ficha (UI11) ──
+
+export const PhoneInput = z
+  .string()
+  .trim()
+  .regex(/^\+?[0-9 ()-]{8,20}$/, 'Teléfono no válido');
+
+/** Corrige datos de contacto y preferencias. El consentimiento se cambia aparte, con constancia. */
+export const UpdateCustomerRequest = z.object({
+  requestId: z.string().min(8).max(64),
+  name: z.string().trim().min(2, 'Escribe al menos 2 caracteres').max(80),
+  phone: PhoneInput.nullable(),
+  email: z.email('Correo no válido').nullable(),
+  /** Nota operativa breve visible en la ficha. Sin datos clínicos. */
+  note: z.string().trim().max(140).nullable(),
+  preferredProfessionalId: Id.nullable(),
+});
+export type UpdateCustomerRequest = z.input<typeof UpdateCustomerRequest>;
+
+// ── Notas internas por rol ──
+
+export const CustomerNoteVisibility = z.enum(['TEAM', 'ADMINS']);
+export type CustomerNoteVisibility = z.infer<typeof CustomerNoteVisibility>;
+
+export const CUSTOMER_NOTE_VISIBILITY_LABELS: Record<CustomerNoteVisibility, { title: string; description: string }> = {
+  TEAM: { title: 'Todo el equipo', description: 'La ve quien tenga acceso a la ficha, incluido el profesional que atiende.' },
+  ADMINS: { title: 'Solo dueño y administración', description: 'Para temas sensibles del negocio (pagos, incidencias). Sin datos clínicos.' },
+};
+
+export const CustomerNote = z.object({
+  id: Id,
+  body: z.string(),
+  visibility: CustomerNoteVisibility,
+  visibilityLabel: z.string(),
+  authorName: z.string(),
+  createdAt: IsoDateTime,
+  /** El autor o la administración pueden borrarla. */
+  canDelete: z.boolean(),
+});
+export type CustomerNote = z.infer<typeof CustomerNote>;
+
+export const CreateCustomerNoteRequest = z.object({
+  requestId: z.string().min(8).max(64),
+  body: z.string().trim().min(2, 'Escribe la nota').max(500, 'Máximo 500 caracteres'),
+  visibility: CustomerNoteVisibility.default('TEAM'),
+});
+export type CreateCustomerNoteRequest = z.input<typeof CreateCustomerNoteRequest>;
+
+// ── Unir duplicados (nunca automático) ──
+
+export const MergePreview = z.object({
+  survivor: z.object({ id: Id, name: z.string(), phoneMasked: z.string().nullable(), completedVisits: z.number().int() }),
+  duplicate: z.object({ id: Id, name: z.string(), phoneMasked: z.string().nullable(), completedVisits: z.number().int() }),
+  appointmentsToMove: z.number().int(),
+  notesToMove: z.number().int(),
+  /** Campos vacíos del cliente que se conserva que se completarán con el duplicado. */
+  fieldsFilled: z.array(z.string()),
+  consentResult: ConsentStatus,
+  consentExplanation: z.string(),
+  loyalty: z.enum(['NONE', 'MOVE', 'BLOCKED']),
+  /** Si hay algo que impide unir (p. ej. ambos con tarjeta de fidelidad). */
+  blockedReason: z.string().nullable(),
+});
+export type MergePreview = z.infer<typeof MergePreview>;
+
+export const MergeCustomersRequest = z.object({
+  requestId: z.string().min(8).max(64),
+  duplicateId: Id,
+});
+export type MergeCustomersRequest = z.input<typeof MergeCustomersRequest>;

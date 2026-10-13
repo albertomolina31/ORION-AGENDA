@@ -5,6 +5,7 @@ import type {
   CalendarOccupancy,
   ConsentRecord,
   Customer,
+  CustomerNoteRecord,
   PrivacyRequestRecord,
   IdempotencyRecord,
   Membership,
@@ -79,6 +80,10 @@ export interface CustomerRepository {
   get(businessId: string, id: string): Promise<Customer | undefined>;
   insert(customer: Customer): Promise<void>;
   update(customer: Customer): Promise<void>;
+  listNotes(businessId: string, customerId: string): Promise<CustomerNoteRecord[]>;
+  saveNote(note: CustomerNoteRecord): Promise<void>;
+  /** Mueve las notas de un cliente a otro (unión de duplicados). */
+  reassignNotes(businessId: string, fromId: string, toId: string): Promise<number>;
 }
 
 export interface PrivacyRepository {
@@ -87,6 +92,8 @@ export interface PrivacyRepository {
   listRequests(businessId: string): Promise<PrivacyRequestRecord[]>;
   getRequest(businessId: string, id: string): Promise<PrivacyRequestRecord | undefined>;
   saveRequest(r: PrivacyRequestRecord): Promise<void>;
+  /** Mueve historial de consentimiento y solicitudes al cliente que se conserva. */
+  reassignCustomer(businessId: string, fromId: string, toId: string): Promise<void>;
 }
 
 export interface AppointmentRepository {

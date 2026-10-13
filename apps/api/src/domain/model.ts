@@ -112,6 +112,26 @@ export interface Customer {
   createdAt: Date;
   /** Datos personales eliminados por solicitud (las citas se conservan sin identificar). */
   anonymizedAt?: Date | null;
+  /** Unido a otro cliente (duplicado): deja de aparecer; sus citas pasan al que se conserva. */
+  mergedIntoId?: string | null;
+  mergedAt?: Date | null;
+}
+
+/** Cliente vigente: ni eliminado por solicitud ni unido a otro. */
+export function isActiveCustomer(c: Pick<Customer, 'anonymizedAt' | 'mergedIntoId'>): boolean {
+  return !c.anonymizedAt && !c.mergedIntoId;
+}
+
+export interface CustomerNoteRecord {
+  id: string;
+  businessId: string;
+  customerId: string;
+  body: string;
+  visibility: 'TEAM' | 'ADMINS';
+  authorId: string;
+  authorName: string;
+  createdAt: Date;
+  deletedAt: Date | null;
 }
 
 /** Cada cambio de consentimiento promocional queda registrado (sección 14). */

@@ -1,4 +1,8 @@
 import type {
+  CreateCustomerNoteRequest,
+  MergeCustomersRequest,
+  MergePreview,
+  UpdateCustomerRequest,
   AnonymizeCustomerRequest,
   CreatePrivacyRequest,
   CustomerDataExport,
@@ -84,6 +88,12 @@ export const endpoints = {
   customers: (bid: string, q: CustomerListQuery) => api<CustomerListResponse>('GET', `${b(bid)}/customers`, { query: q as Record<string, string> }),
   customer: (bid: string, id: string) => api<CustomerDetail>('GET', `${b(bid)}/customers/${id}`),
   createCustomer: (bid: string, body: CreateCustomerRequest) => api<CustomerDetail>('POST', `${b(bid)}/customers`, { body }),
+  updateCustomer: (bid: string, id: string, body: UpdateCustomerRequest) => api<CustomerDetail>('PATCH', `${b(bid)}/customers/${id}`, { body }),
+  addCustomerNote: (bid: string, id: string, body: CreateCustomerNoteRequest) => api<CustomerDetail>('POST', `${b(bid)}/customers/${id}/notes`, { body }),
+  deleteCustomerNote: (bid: string, id: string, noteId: string, body: { requestId: string }) =>
+    api<CustomerDetail>('POST', `${b(bid)}/customers/${id}/notes/${noteId}/delete`, { body }),
+  mergePreview: (bid: string, id: string, duplicateId: string) => api<MergePreview>('GET', `${b(bid)}/customers/${id}/merge-preview`, { query: { with: duplicateId } }),
+  mergeCustomers: (bid: string, id: string, body: MergeCustomersRequest) => api<CustomerDetail>('POST', `${b(bid)}/customers/${id}/merge`, { body }),
   updateConsent: (bid: string, id: string, body: UpdateConsentRequest) => api<CustomerDetail>('POST', `${b(bid)}/customers/${id}/consent`, { body }),
   exportCustomer: (bid: string, id: string) => api<CustomerDataExport>('GET', `${b(bid)}/customers/${id}/export`),
   anonymizeCustomer: (bid: string, id: string, body: AnonymizeCustomerRequest) => api<CustomerDetail>('POST', `${b(bid)}/customers/${id}/anonymize`, { body }),

@@ -142,8 +142,8 @@ export default function PrivacyRequestDetail() {
           ) : null}
           {r.type === 'RECTIFICATION' ? (
             <>
-              <Text variant="body">Corrige los datos en la ficha del cliente y después marca la solicitud como atendida.</Text>
-              {!r.customer.anonymized ? <Button label="Abrir ficha" icon={PencilLine} variant="outline" onPress={() => router.push(`/cliente/${r.customer.id}`)} /> : null}
+              <Text variant="body">Corrige los datos del cliente y después marca la solicitud como atendida.</Text>
+              {!r.customer.anonymized ? <Button label="Corregir datos" icon={PencilLine} variant="outline" onPress={() => router.push(`/cliente/editar?id=${r.customer.id}`)} /> : null}
             </>
           ) : null}
           {r.type === 'OPPOSITION' ? <Text variant="body">Al marcarla como atendida se registra su baja de promociones. Seguirá recibiendo avisos de sus citas.</Text> : null}

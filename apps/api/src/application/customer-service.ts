@@ -1,4 +1,7 @@
 import type {
+  CreateCustomerNoteRequest,
+  CustomerNote,
+  UpdateCustomerRequest,
   CreateCustomerRequest,
   CustomerDetail,
   CustomerListQuery,
@@ -6,12 +9,19 @@ import type {
   CustomerSegment,
   CustomerSummary,
 } from '@orion/contracts';
-import { CreateCustomerRequest as CreateCustomerSchema, CustomerListQuery as ListSchema } from '@orion/contracts';
+import {
+  CreateCustomerNoteRequest as CreateNoteSchema,
+  CreateCustomerRequest as CreateCustomerSchema,
+  CUSTOMER_NOTE_VISIBILITY_LABELS,
+  CustomerListQuery as ListSchema,
+  UpdateCustomerRequest as UpdateCustomerSchema,
+} from '@orion/contracts';
+import { toZonedIso } from '../domain/local-time.js';
 import type { Clock } from '../domain/clock.js';
 import { DomainError } from '../domain/errors.js';
 import type { IdGenerator } from '../domain/ids.js';
 import { ACTIVE_STATUSES } from '../domain/lifecycle.js';
-import type { ActorContext, Appointment, Customer, Professional } from '../domain/model.js';
+import { type ActorContext, type Appointment, type Customer, type CustomerNoteRecord, isActiveCustomer, type Professional } from '../domain/model.js';
 import { requirePermission } from '../domain/permissions.js';
 import type { IdempotencyService } from './idempotency-service.js';
 import type { Repositories } from './ports.js';
@@ -101,8 +111,8 @@ export class CustomerService {
   async list(actor: ActorContext, rawQuery: CustomerListQuery): Promise<CustomerListResponse> {
     const q = ListSchema.parse(rawQuery);
     const { rows: all, pros } = await this.derive(actor);
-    // Los clientes con datos eliminados no aparecen en listas, búsquedas ni audiencias.
-    const rows = all.filter((d) => !d.customer.anonymizedAt);
+    // Los clientes eliminados por solicitud o unidos a otro no aparecen en listas ni búsquedas.
+    const rows = all.filter((d) => isActiveCustomer(d.customer));
     const needle = q.q ? normalizeName(q.q) : '';
     const digits = q.q?.replace(/\D/g, '') ?? '';
     const searched = rows.filter(
@@ -140,6 +150,9 @@ export class CustomerService {
     const { rows, pros } = await this.derive(actor);
     const d = rows.find((r) => r.customer.id === id);
     if (!d) throw new DomainError('NOT_FOUND', 'Cliente no encontrado.');
+    if (d.customer.mergedIntoId) {
+      throw new DomainError('NOT_FOUND', 'Este cliente se unió con otro registro.', { mergedIntoId: d.customer.mergedIntoId });
+    }
     const all = (await this.repos.appointments.listByCustomer(actor.businessId, id))
       .filter((a) => actor.permissions.has('customers.view_all') || a.professionalId === actor.professionalId)
       .sort((a, b) => b.startsAt.getTime() - a.startsAt.getTime());
@@ -169,6 +182,9 @@ export class CustomerService {
         ? (await this.repos.privacy.consentHistory(actor.businessId, c.id)).map((r) => consentEventDto(r, zone))
         : [],
       anonymized: !!c.anonymizedAt,
+      notes: (await this.repos.customers.listNotes(actor.businessId, c.id))
+        .filter((n) => n.visibility === 'TEAM' || actor.permissions.has('customers.notes_admin'))
+        .map((n) => this.noteDto(actor, n, zone)),
     };
   }
 
@@ -208,6 +224,86 @@ export class CustomerService {
     return this.get(actor, created.id);
   }
 
+  // ── Edición (UI11) ──
+
+  async update(actor: ActorContext, id: string, raw: UpdateCustomerRequest): Promise<CustomerDetail> {
+    requirePermission(actor, 'customers.manage');
+    const req = UpdateCustomerSchema.parse(raw);
+    const { requestId, ...payload } = req;
+    await this.idempotency.execute(actor, `customer.update.${id}`, requestId, payload, async () => {
+      const c = await this.repos.customers.get(actor.businessId, id);
+      if (!c || !isActiveCustomer(c)) throw new DomainError('NOT_FOUND', 'Cliente no encontrado.');
+      if (req.preferredProfessionalId) {
+        const pros = await this.repos.catalog.professionals(actor.businessId);
+        if (!pros.some((p) => p.id === req.preferredProfessionalId && p.active)) {
+          throw new DomainError('VALIDATION_ERROR', 'Profesional no disponible.', undefined, { preferredProfessionalId: ['No existe o está inactivo'] });
+        }
+      }
+      await this.repos.customers.update({
+        ...c,
+        name: req.name,
+        phoneE164: normalizePhone(req.phone ?? undefined),
+        email: req.email ?? null,
+        note: req.note || null,
+        preferredProfessionalId: req.preferredProfessionalId,
+      });
+      return { ok: true };
+    });
+    return this.get(actor, id);
+  }
+
+  // ── Notas internas por rol ──
+
+  private noteDto(actor: ActorContext, n: CustomerNoteRecord, zone: string): CustomerNote {
+    return {
+      id: n.id,
+      body: n.body,
+      visibility: n.visibility,
+      visibilityLabel: CUSTOMER_NOTE_VISIBILITY_LABELS[n.visibility].title,
+      authorName: n.authorName,
+      createdAt: toZonedIso(n.createdAt, zone),
+      canDelete: n.authorId === actor.userId || actor.permissions.has('customers.notes_admin'),
+    };
+  }
+
+  /** Cualquiera que pueda ver la ficha puede dejar una nota para el equipo; las restringidas, solo administración. */
+  async addNote(actor: ActorContext, customerId: string, raw: CreateCustomerNoteRequest): Promise<CustomerDetail> {
+    const req = CreateNoteSchema.parse(raw);
+    if (req.visibility === 'ADMINS') requirePermission(actor, 'customers.notes_admin');
+    const current = await this.get(actor, customerId); // valida que la ficha sea visible para este actor
+    if (current.anonymized) throw new DomainError('POLICY_VIOLATION', 'Los datos de este cliente fueron eliminados.');
+    const { requestId, ...payload } = req;
+    await this.idempotency.execute(actor, `customer.note.${customerId}`, requestId, payload, async () => {
+      await this.repos.customers.saveNote({
+        id: this.ids.next('note'),
+        businessId: actor.businessId,
+        customerId,
+        body: req.body,
+        visibility: req.visibility,
+        authorId: actor.userId,
+        authorName: actor.userName,
+        createdAt: this.clock.now(),
+        deletedAt: null,
+      });
+      return { ok: true };
+    });
+    return this.get(actor, customerId);
+  }
+
+  async deleteNote(actor: ActorContext, customerId: string, noteId: string, requestId: string): Promise<CustomerDetail> {
+    await this.get(actor, customerId);
+    await this.idempotency.execute(actor, `customer.note.delete.${noteId}`, requestId, { noteId }, async () => {
+      const note = (await this.repos.customers.listNotes(actor.businessId, customerId)).find((n) => n.id === noteId);
+      if (!note) throw new DomainError('NOT_FOUND', 'Nota no encontrada.');
+      if (note.authorId !== actor.userId && !actor.permissions.has('customers.notes_admin')) {
+        throw new DomainError('FORBIDDEN', 'Solo quien escribió la nota o la administración pueden borrarla.');
+      }
+      await this.repos.customers.saveNote({ ...note, deletedAt: this.clock.now() });
+      return { ok: true };
+    });
+    return this.get(actor, customerId);
+  }
+
   /** Sugerir posibles duplicados por teléfono o nombre normalizado; nunca fusionar solo. */
   private async duplicatesOf(businessId: string, c: Customer) {
     const all = await this.repos.customers.list(businessId);
@@ -215,7 +311,7 @@ export class CustomerService {
       .filter(
         (o) =>
           o.id !== c.id &&
-          !o.anonymizedAt &&
+          isActiveCustomer(o) &&
           ((c.phoneE164 && o.phoneE164 === c.phoneE164) || normalizeName(o.name) === normalizeName(c.name)),
       )
       .map((o) => ({ id: o.id, name: o.name }));

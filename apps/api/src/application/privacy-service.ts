@@ -166,7 +166,7 @@ export class PrivacyService {
       this.zone(actor.businessId),
     ]);
     const byId = new Map(customers.map((c) => [c.id, c]));
-    const active = customers.filter((c) => !c.anonymizedAt);
+    const active = customers.filter((c) => !c.anonymizedAt && !c.mergedIntoId);
     const dtos = requests
       .filter((r) => byId.has(r.customerId))
       .map((r) => this.toDto(r, byId.get(r.customerId)!, zone));
