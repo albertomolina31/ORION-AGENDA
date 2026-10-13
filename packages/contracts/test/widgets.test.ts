@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { Appointment } from '../src/appointments.js';
 import {
   buildWidgetSnapshot,
+  buildWidgetTimeline,
+  buildWidgetViewModel,
   customerInitials,
   effectiveWidgetPrivacy,
   isWidgetSnapshotStale,
@@ -166,5 +168,45 @@ describe('Widgets: instantánea (W1)', () => {
     expect(s.week.rangeLabel).toBe('26 oct – 1 nov');
     expect(isWidgetSnapshotStale(s, new Date('2026-10-29T10:59:00.000-07:00'))).toBe(false);
     expect(isWidgetSnapshotStale(s, new Date('2026-10-29T11:01:00.000-07:00'))).toBe(true);
+  });
+});
+
+describe('Widgets: modelo de vista y timeline (W4–W6)', () => {
+  const week = [
+    apt('2026-10-14T09:00', 'COMPLETED'),
+    apt('2026-10-14T10:00', 'CONFIRMED'),
+    apt('2026-10-14T10:30', 'PENDING_APPROVAL', { expiresAt: '2026-10-14T11:59:00.000-07:00' }),
+    apt('2026-10-15T12:00', 'CONFIRMED'),
+  ];
+
+  it('la próxima cita avanza cuando termina la anterior', () => {
+    const s = buildWidgetSnapshot(input(week));
+    const at0940 = buildWidgetViewModel(s, new Date('2026-10-14T09:40:00.000-07:00'));
+    expect(at0940.next).toMatchObject({ timeLabel: '10:00', dayLabel: null, title: 'Corte y peinado', detail: 'M. R. · Con Ana', pending: false });
+    const at1031 = buildWidgetViewModel(s, new Date('2026-10-14T10:31:00.000-07:00'));
+    expect(at1031.next).toMatchObject({ timeLabel: '10:30', pending: true, statusLabel: 'Por aprobar' });
+    const at1101 = buildWidgetViewModel(s, new Date('2026-10-14T11:01:00.000-07:00'));
+    expect(at1101.next).toMatchObject({ timeLabel: '12:00', dayLabel: 'Mañana' });
+    expect(at1101.today.rows).toEqual([]);
+  });
+
+  it('oculta servicio, cliente y profesional con privacidad "oculta"', () => {
+    const vm = buildWidgetViewModel(buildWidgetSnapshot(input(week, { privacy: 'HIDDEN' })), new Date('2026-10-14T09:40:00.000-07:00'));
+    expect(vm.next).toMatchObject({ title: 'Próxima cita', detail: null });
+    expect(vm.today.rows.map((r) => r.text)).toEqual(['Cita', 'Por aprobar']);
+  });
+
+  it('timeline: ahora, fin de cada cita futura y momento en que los datos envejecen', () => {
+    const s = buildWidgetSnapshot(input(week));
+    const tl = buildWidgetTimeline(s, new Date('2026-10-14T09:40:00.000-07:00'));
+    expect(tl.map((e) => e.date.toISOString())).toEqual([
+      '2026-10-14T16:40:00.000Z',
+      '2026-10-14T17:30:00.000Z',
+      '2026-10-14T18:00:00.000Z',
+      '2026-10-14T18:40:01.000Z',
+      '2026-10-15T19:30:00.000Z',
+    ]);
+    expect(tl[3]!.props.stale).toBe(true);
+    expect(tl[3]!.props.updatedLabel).toBe('Abre Orion para actualizar');
   });
 });

@@ -8,6 +8,7 @@ import { ApiError, configureApiClient } from './api-client';
 import { endpoints } from './endpoints';
 import { useNetwork } from './network';
 import { secureStorage } from './secure-storage';
+import { clearNativeWidgets } from '@/widgets/native-bridge';
 
 const TOKEN_KEY = 'orion.session.token';
 const BUSINESS_KEY = 'orion.session.business';
@@ -66,6 +67,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     await AsyncStorage.removeItem(CACHE_KEY).catch(() => undefined);
     // La instantánea de los widgets sigue la misma regla que la caché (ver lib/widgets.ts).
     await AsyncStorage.removeItem(WIDGET_SNAPSHOT_KEY).catch(() => undefined);
+    await clearNativeWidgets().catch(() => undefined);
     setQueryClient(makeQueryClient());
   }, [queryClient]);
 

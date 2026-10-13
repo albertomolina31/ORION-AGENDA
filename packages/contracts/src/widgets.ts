@@ -290,3 +290,124 @@ export function buildWidgetSnapshot(input: BuildWidgetSnapshotInput): WidgetSnap
 export function isWidgetSnapshotStale(snapshot: Pick<WidgetSnapshot, 'generatedAt'>, now: Date): boolean {
   return now.getTime() - Date.parse(snapshot.generatedAt) > WIDGET_STALE_AFTER_MIN * 60_000;
 }
+
+// ── Modelo de vista: lo que dibuja cada widget en un instante ──
+// Lo calcula la app (iOS: una entrada de timeline por cita; Android: al dibujar). El código
+// nativo del widget solo pinta estos textos, sin reglas de negocio.
+
+/** Color de la barra del profesional (modo claro y oscuro del widget). */
+export const WIDGET_PRO_COLORS: Record<string, string> = {
+  lavender: '#8E78FF',
+  mint: '#45C9A2',
+  peach: '#F0955E',
+  sky: '#5C9BF0',
+  rose: '#E46BB4',
+};
+
+export interface WidgetViewModel {
+  businessName: string;
+  /** "Actualizado 09:40" o "Abre Orion para actualizar". */
+  updatedLabel: string;
+  stale: boolean;
+  hidden: boolean;
+  oriPose: WidgetOriPose;
+  next: {
+    appointmentId: string;
+    timeLabel: string;
+    /** null si es hoy. */
+    dayLabel: string | null;
+    title: string;
+    statusLabel: string;
+    pending: boolean;
+    /** "M. L. · Con Ana"; null si la privacidad lo oculta. */
+    detail: string | null;
+    startsAt: string;
+    endsAt: string;
+    deepLink: string;
+  } | null;
+  today: {
+    title: string;
+    rows: Array<{ id: string; timeLabel: string; text: string; pending: boolean; color: string; deepLink: string }>;
+    emptyMessage: string;
+    deepLink: string;
+  };
+  week: {
+    rangeLabel: string;
+    days: Array<{ date: string; weekdayShort: string; dayNumber: number; label: string; countLabel: string; isToday: boolean; closed: boolean; deepLink: string }>;
+  };
+}
+
+/** Qué mostrar en el instante `at` (las citas terminadas dejan de ser "próximas"). */
+export function buildWidgetViewModel(s: WidgetSnapshot, at: Date): WidgetViewModel {
+  const t = at.getTime();
+  const stale = isWidgetSnapshotStale(s, at);
+  const hidden = s.privacy === 'HIDDEN';
+  const upcoming = s.upcoming.filter((a) => Date.parse(a.endsAt) > t);
+  const n = upcoming[0];
+  const todayRows = upcoming.filter((a) => a.date === s.today).slice(0, 3);
+  return {
+    businessName: s.businessName,
+    updatedLabel: stale ? 'Abre Orion para actualizar' : `Actualizado ${s.generatedAtLabel}`,
+    stale,
+    hidden,
+    // Al terminar la última cita del día, Ori pasa a celebrar aunque la instantánea sea de antes.
+    oriPose: todayRows.length === 0 && s.day.completed > 0 ? 'celebrate' : s.oriPose,
+    next: n
+      ? {
+          appointmentId: n.appointmentId,
+          timeLabel: n.timeLabel,
+          dayLabel: n.dayLabel === 'Hoy' ? null : n.dayLabel,
+          title: hidden ? 'Próxima cita' : n.serviceName ?? 'Cita',
+          statusLabel: n.statusLabel,
+          pending: n.status === 'PENDING_APPROVAL',
+          detail: hidden ? null : [n.customerLabel, n.professionalName ? `Con ${n.professionalName}` : null].filter(Boolean).join(' · '),
+          startsAt: n.startsAt,
+          endsAt: n.endsAt,
+          deepLink: n.deepLink,
+        }
+      : null,
+    today: {
+      title: `Hoy · ${s.businessName}`,
+      rows: todayRows.map((a) => ({
+        id: a.appointmentId,
+        timeLabel: a.timeLabel,
+        text: hidden ? (a.status === 'PENDING_APPROVAL' ? 'Por aprobar' : 'Cita') : `${a.serviceName} · ${a.professionalName}`,
+        pending: a.status === 'PENDING_APPROVAL',
+        color: a.status === 'PENDING_APPROVAL' ? '#F2B657' : WIDGET_PRO_COLORS[a.colorKey] ?? WIDGET_PRO_COLORS.lavender!,
+        deepLink: a.deepLink,
+      })),
+      emptyMessage: s.emptyMessage,
+      deepLink: `${DEEP_LINK}agenda`,
+    },
+    week: {
+      rangeLabel: s.week.rangeLabel,
+      days: s.week.days.map((d) => ({
+        date: d.date,
+        weekdayShort: d.weekdayShort,
+        dayNumber: d.dayNumber,
+        label: `${d.weekdayShort} ${d.dayNumber}`,
+        countLabel: d.countLabel,
+        isToday: d.isToday,
+        closed: d.closed,
+        deepLink: d.deepLink,
+      })),
+    },
+  };
+}
+
+/**
+ * Timeline para WidgetKit: ahora, al terminar cada próxima cita y cuando los datos se
+ * vuelven viejos. Así la "Próxima cita" avanza sola sin abrir la app ni usar red.
+ */
+export function buildWidgetTimeline(s: WidgetSnapshot, now: Date): Array<{ date: Date; props: WidgetViewModel }> {
+  const instants = new Set<number>([now.getTime()]);
+  for (const a of s.upcoming) {
+    const end = Date.parse(a.endsAt);
+    if (end > now.getTime()) instants.add(end);
+  }
+  const staleAt = Date.parse(s.generatedAt) + WIDGET_STALE_AFTER_MIN * 60_000 + 1000;
+  if (staleAt > now.getTime()) instants.add(staleAt);
+  return [...instants]
+    .sort((a, b) => a - b)
+    .map((ms) => ({ date: new Date(ms), props: buildWidgetViewModel(s, new Date(ms)) }));
+}

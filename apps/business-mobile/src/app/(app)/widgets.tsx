@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { Eye, EyeOff, Lock } from 'lucide-react-native';
 import { type ReactNode, useMemo } from 'react';
 import { Pressable, useWindowDimensions, View } from 'react-native';
+import { NativeWidgetPreviews } from '@/features/NativeWidgetPreviews';
 import { DayAgendaWidget, NextAppointmentWidget, WeekSummaryWidget, WIDGET_SIZES } from '@/features/WidgetPreviews';
 import { useProfile } from '@/lib/queries';
 import { useWidgetPrivacyPreference, useWidgetSnapshot } from '@/lib/widgets';
@@ -61,7 +62,7 @@ export default function Widgets() {
     <Screen header={<StackHeader title="Widgets" subtitle="Tu agenda, a un vistazo" />}>
       <Note
         title="Vista previa"
-        body="Así se verán los widgets con tus datos actuales. Para agregarlos a la pantalla de inicio hace falta la app instalada (development build); en el navegador y en Expo Go no existen."
+        body="Así se verán los widgets con tus datos actuales. Para agregarlos, instala la app (development build) y mantén presionada la pantalla de inicio → Widgets → Orion Business. En el navegador y en Expo Go no existen."
       />
 
       <Appear>
@@ -142,6 +143,8 @@ export default function Widgets() {
             </View>
             <Caption>Si la app no se abre en más de 2 horas, el widget lo dice en vez de mostrar datos viejos como actuales.</Caption>
           </Appear>
+
+          <NativeWidgetPreviews snapshot={snapshot} />
 
           <Note
             title="¿Y las animaciones?"

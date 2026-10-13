@@ -56,20 +56,31 @@ Guía para pasar de la simulación web a la app instalada con sus widgets nativo
 - No hace falta compilar toda la app.
 - Con `expo-widgets` el widget se escribe en JSX. Con la alternativa en Swift se usan vistas previas `#Preview(as: .systemSmall)`.
 
-### Pasos (cuando empecemos W3)
+### Pasos (el código de W3–W6 ya está en el repo)
+
+Las dependencias nativas ya están en `package.json`:
+- `expo-widgets`
+- `react-native-android-widget`
+- `expo-dev-client`
+- `expo-system-ui`
+
+Los plugins (`app.json`) y `eas.json` ya están configurados.
 
 ```bash
 # en el Mac, dentro del repo
 pnpm install
 pnpm build:packages
 cd apps/business-mobile
-npx expo install expo-widgets expo-dev-client   # versiones compatibles con SDK 57
-npx expo prebuild --clean -p ios                 # genera ios/ con la extensión del widget
-npx expo run:ios                                 # compila y abre el Simulator
+npx expo prebuild --clean -p ios     # genera ios/ con la extensión ExpoWidgetsTarget
+pnpm ios                             # = expo run:ios: compila y abre el Simulator
 # opcional: xed ios   → abrir el proyecto en Xcode
 ```
 
 En otra terminal, la API: `pnpm dev:api`. El Simulator ve `localhost` del Mac, así que no hace falta cambiar `EXPO_PUBLIC_API_URL`.
+
+**Luego, para ver los widgets:**
+1. Abre la app, inicia sesión y entra a un negocio. Esto escribe la instantánea.
+2. Ve al inicio del iPhone, mantén presionado → **Editar → Añadir widget → Orion Business**.
 
 ### Apple ID gratis o Apple Developer Program (99 USD/año)
 
@@ -98,10 +109,11 @@ En otra terminal, la API: `pnpm dev:api`. El Simulator ve `localhost` del Mac, a
 
 ```bash
 cd apps/business-mobile
-npx expo install react-native-android-widget expo-dev-client
 npx expo prebuild --clean -p android
-npx expo run:android            # compila e instala en el emulador abierto
+pnpm android                    # = expo run:android: compila e instala en el emulador abierto
 ```
+
+En Android, la pantalla *Negocio → Widgets* también muestra el **widget nativo real** (`WidgetPreview`) sin salir de la app.
 
 El emulador **no** ve `localhost` del equipo como propio. Para la API usen `EXPO_PUBLIC_API_URL=http://10.0.2.2:3000` (alias del equipo anfitrión), o `adb reverse tcp:3000 tcp:3000` y dejen `localhost`.
 

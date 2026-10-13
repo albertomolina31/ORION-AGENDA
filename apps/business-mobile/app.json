@@ -10,7 +10,12 @@
     "backgroundColor": "#FBF8F4",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "labs.orion.business.dev"
+      "bundleIdentifier": "labs.orion.business.dev",
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.labs.orion.business"
+        ]
+      }
     },
     "android": {
       "package": "labs.orion.business.dev",
@@ -26,7 +31,86 @@
       "output": "single",
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-router", "expo-secure-store"],
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-widgets",
+        {
+          "bundleIdentifier": "labs.orion.business.dev.widgets",
+          "groupIdentifier": "group.labs.orion.business",
+          "widgets": [
+            {
+              "name": "ProximaCita",
+              "displayName": "Próxima cita",
+              "description": "Tu siguiente cita y su estado.",
+              "supportedFamilies": [
+                "systemSmall"
+              ],
+              "contentMarginsDisabled": false
+            },
+            {
+              "name": "AgendaDelDia",
+              "displayName": "Agenda del día",
+              "description": "Las próximas citas de hoy.",
+              "supportedFamilies": [
+                "systemMedium"
+              ],
+              "contentMarginsDisabled": false
+            },
+            {
+              "name": "ResumenSemanal",
+              "displayName": "Resumen semanal",
+              "description": "Citas por día de esta semana.",
+              "supportedFamilies": [
+                "systemLarge"
+              ],
+              "contentMarginsDisabled": false
+            }
+          ]
+        }
+      ],
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "ProximaCita",
+              "label": "Próxima cita",
+              "description": "Tu siguiente cita y su estado.",
+              "minWidth": "110dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "AgendaDelDia",
+              "label": "Agenda del día",
+              "description": "Las próximas citas de hoy.",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "ResumenSemanal",
+              "label": "Resumen semanal",
+              "description": "Citas por día de esta semana.",
+              "minWidth": "250dp",
+              "minHeight": "250dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 4,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            }
+          ]
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": false
     }

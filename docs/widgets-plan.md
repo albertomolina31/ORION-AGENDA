@@ -1,12 +1,16 @@
 # Plan de implementación: widgets de Orion Business (iOS y Android)
 
 **Estado (13-oct-2026):**
-- **W1 y W2 hechos:**
-  - contrato de la instantánea con pruebas;
-  - privacidad por negocio y por persona;
-  - sincronización desde la app;
-  - pantalla **Negocio → Widgets** con vista previa usando datos reales.
-- **Siguiente paso:** los widgets nativos (W3 en adelante) necesitan un *development build*. Cómo compilarlos y verlos está en [`emuladores.md`](emuladores.md).
+- **W1–W2:** contrato y privacidad hechos y probados.
+- **W3–W6:** código nativo **listo para compilar**:
+  - iOS con `expo-widgets`;
+  - Android con `react-native-android-widget`;
+  - `eas.json` y App Group configurados.
+- **Lo que ya se verificó en Linux:**
+  - `expo prebuild` genera la extensión `ExpoWidgetsTarget` (3 widgets y App Group) y los 3 receivers de Android;
+  - los bundles de iOS y Android compilan;
+  - los 3 widgets de iOS, ya serializados, se ejecutaron 36 veces sin errores (timeline × privacidad × claro/oscuro).
+- **Falta:** verlos en el simulador, el emulador y teléfonos reales. Ver [`emuladores.md`](emuladores.md).
 
 En el documento maestro los widgets están en "Posteriores" (sección 2). Este plan sigue la propuesta visual aprobada: **"Widgets del negocio · Tu agenda, a un vistazo"**.
 
@@ -106,14 +110,11 @@ WidgetWeekDay = { date, weekdayShort, dayNumber, count, closed, isToday, countLa
 
 | Plataforma | Opción recomendada | Por qué | Alternativa |
 |---|---|---|---|
-| iOS | **`expo-widgets`** (oficial de Expo, en SDK 57 `~57.0.24`; estable desde SDK 56) | Widgets y Live Activities escritos en **JSX con componentes de Expo UI** (SwiftUI por debajo), sin un target Swift aparte. Lo mantiene Expo, igual que el SDK | `@bacons/apple-targets` más una extensión SwiftUI/WidgetKit escrita en Swift. Se usa si `expo-widgets` no cubre algo, como enlaces por día en el widget grande o `contentTransition` |
+| iOS | **`expo-widgets` `~57.0.24`** (oficial de Expo) | Widgets y Live Activities en **JSX con `@expo/ui/swift-ui`**: cada layout lleva la directiva `'widget'`, se serializa y corre en la extensión (no puede usar nada de fuera de su función). Confirmado en el paquete: `Link` (enlace por día), `widgetURL`, `contentTransition('numericText')`, `Text` con temporizador, `containerBackground`, `updateTimeline` | `@bacons/apple-targets` + Swift si algo faltara |
 | Android | **`react-native-android-widget`** (incluye plugin de Expo) | Widgets en JSX/TS renderizados como RemoteViews. Reutiliza tokens. Trae `WidgetPreview` para diseñar dentro de la app | Jetpack Glance (Kotlin) con un config plugin propio |
 | Puente de datos | Módulo pequeño `modules/widget-bridge`, o la API de datos compartidos de `expo-widgets` en iOS | Misma interfaz que el `widgetBridge` actual: `setSnapshot(json)` y `clear()` | — |
 
-**Aviso:** `expo-widgets` es **solo iOS**. Sus docs no se pudieron abrir desde este entorno; antes de W4 hay que confirmar en un Mac:
-- que permite un enlace por día en el widget grande;
-- cómo comparte datos con la app;
-- que admite transiciones de contenido.
+**Nota:** en SDK 57 la parte Android de `expo-widgets` es solo un esqueleto (`enableAndroid`, dibuja el nombre del widget). Por eso Android usa `react-native-android-widget`. La API de `expo-widgets` se revisó en los tipos del paquete instalado, porque sus docs no abren desde este entorno.
 
 **Requisitos:**
 - *development build* (no funciona en Expo Go ni en web);
@@ -126,10 +127,10 @@ WidgetWeekDay = { date, weekdayShort, dayNumber, count, closed, isToday, countLa
 |---|---|---|---|
 | W1 | Contrato `WidgetSnapshot` y `buildWidgetSnapshot` con pruebas | ✅ | 10 pruebas: semana, cerrados, orden, vencidas, privacidad, estados, cambio de mes, datos viejos |
 | W2 | Privacidad por negocio (API) y por persona (teléfono); sincronización; vista previa en la app; deep link `agenda?fecha=` | ✅ | Pantalla *Widgets* con datos reales; la agenda abre la fecha del enlace |
-| W3 | `eas.json` con perfiles, App Group, puente nativo (iOS App Group / Android SharedPreferences) y borrado al cerrar sesión | Pendiente (Mac + D07) | Inspección del almacenamiento compartido en simulador y emulador |
-| W4 | iOS: Próxima cita (pequeño) con timeline por cita y transición numérica | Pendiente | Probado en simulador y en iPhone real, modo claro/oscuro, texto grande |
-| W5 | Android: Próxima cita 2×2 | Pendiente | Emulador Pixel API 36 y un Samsung real |
-| W6 | Agenda del día y Resumen semanal en ambas plataformas, con enlace por día | Pendiente | Los deep links abren la pantalla correcta con sesión válida |
+| W3 | `eas.json`, App Group `group.labs.orion.business`, puente nativo (`src/widgets/native-bridge.*`), borrado al cerrar sesión | ✅ Código; verificar en dispositivo | Prebuild genera los targets; widgets limpios tras cerrar sesión |
+| W4 | iOS: los 3 widgets (`src/widgets/ios-layouts.tsx`) con timeline por cita (`buildWidgetTimeline`), transición numérica y cuenta regresiva | ✅ Código; verificar en simulador y iPhone | Ejecución de los widgets serializados sin errores (36 casos) |
+| W5 | Android: los 3 widgets (`src/widgets/android-widgets.tsx`), tarea en segundo plano (`register.android.ts`) y vista previa nativa en la app | ✅ Código; verificar en emulador y Samsung | Bundle Android incluye el registro de la tarea |
+| W6 | Deep links por día (`agenda?fecha=`) y por cita | ✅ App; verificar desde el widget | La agenda abre la fecha del enlace (probado en web) |
 | W7 | Actualización en segundo plano (`expo-background-task`) y datos viejos (> 2 h) | Pendiente | El widget nunca muestra datos de otra sesión ni sin hora |
 | W8 | Fase 2: pantalla bloqueada, Actividad en vivo "Cita en curso" y evaluación del token de solo lectura | Pendiente | Decisión documentada según el piloto |
 
