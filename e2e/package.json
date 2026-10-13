@@ -1,0 +1,16 @@
+{
+  "name": "@orion/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:e2e": "node scripts/build.mjs",
+    "test:e2e": "node scripts/build.mjs && playwright test",
+    "test:e2e:only": "playwright test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "typescript": "~6.0.3"
+  }
+}

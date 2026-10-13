@@ -21,3 +21,51 @@ jobs:
       - run: pnpm test
       - name: Contrato OpenAPI actualizado
         run: pnpm openapi && git diff --exit-code docs/openapi.json
+
+  # Flujos de la app (versión web) contra la API simulada, con Playwright.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Navegador para Playwright
+        run: pnpm --filter @orion/e2e exec playwright install --with-deps chromium
+      - name: Pruebas de extremo a extremo
+        run: pnpm e2e
+      - name: Reporte si fallan
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+          retention-days: 7
+
+  # Widgets de iOS: el bundle de iOS compila y los layouts serializados se ejecutan sin
+  # referencias externas (no reemplaza probarlos en el Simulator/iPhone).
+  widgets-ios:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build:packages
+      - name: Bundle de iOS sin bytecode
+        working-directory: apps/business-mobile
+        run: npx expo export --platform ios --no-bytecode --output-dir ../../.native-export
+        env:
+          CI: '1'
+      - name: Ejecutar widgets serializados
+        run: node apps/business-mobile/scripts/check-ios-widgets.mjs .native-export/_expo/static/js/ios/*.js

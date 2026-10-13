@@ -38,6 +38,8 @@ export interface OrionContainer {
   notifications: NotificationService;
   privacy: PrivacyService;
   outbox: OutboxDispatcher;
+  /** SIMULACIÓN: vuelve a los datos de ejemplo (pruebas de extremo a extremo y demos). */
+  reset(): void;
 }
 
 export function createSimulationContainer(clock: Clock, ids: IdGenerator, seedAt: Date = clock.now()): OrionContainer {
@@ -67,6 +69,12 @@ export function createSimulationContainer(clock: Clock, ids: IdGenerator, seedAt
     config: new ConfigService(repos, clock, ids, idempotency),
     settings: new BusinessSettingsService(repos, clock, idempotency, (a) => business.profile(a)),
     notifications: new NotificationService(repos, db, clock),
+    reset: () => {
+      const fresh = buildSeed(clock.now());
+      db.state = fresh.db;
+      Object.assign(loyalty.state, fresh.loyalty);
+      Object.assign(campaigns.state, fresh.campaigns);
+    },
     privacy: new PrivacyService(repos, clock, ids, idempotency, (a, id) => customers.get(a, id)),
     outbox,
   };

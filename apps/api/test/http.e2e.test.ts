@@ -21,6 +21,11 @@ afterAll(async () => {
 });
 
 describe('API v1 (simulación)', () => {
+  it('el reinicio de la simulación está apagado salvo con ORION_ALLOW_RESET=1', async () => {
+    delete process.env.ORION_ALLOW_RESET;
+    await request(server()).post('/v1/simulation/reset').expect(403);
+  });
+
   it('sin sesión responde 401 con envelope estable', async () => {
     const res = await request(server()).get('/v1/me').expect(401);
     expect(res.body).toMatchObject({ code: 'UNAUTHENTICATED', requestId: expect.any(String) });

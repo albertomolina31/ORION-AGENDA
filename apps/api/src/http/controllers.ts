@@ -495,4 +495,12 @@ export class SimulationController {
       notice: 'Datos sintéticos en memoria. Se reinician con cada arranque. Sin garantías de persistencia (D09).',
     };
   }
+
+  /** Volver a los datos de ejemplo. Solo con ORION_ALLOW_RESET=1 (pruebas e2e y demos locales). */
+  @Post('reset')
+  @HttpCode(204)
+  reset() {
+    if (process.env.ORION_ALLOW_RESET !== '1') throw new DomainError('FORBIDDEN', 'El reinicio de la simulación está desactivado.');
+    this.c.reset();
+  }
 }

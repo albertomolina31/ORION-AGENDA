@@ -11,6 +11,7 @@
     "dev:app": "pnpm --filter @orion/business-mobile start",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
-    "openapi": "pnpm --filter @orion/api openapi"
+    "openapi": "pnpm --filter @orion/api openapi",
+    "e2e": "pnpm --filter @orion/e2e test:e2e"
   }
 }
