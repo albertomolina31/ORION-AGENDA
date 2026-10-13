@@ -10,7 +10,7 @@ const run = (cmd, cwd = root, env = {}) => execSync(cmd, { cwd, stdio: 'inherit'
 
 run('pnpm build:packages');
 run('pnpm --filter @orion/api build');
-run(`npx expo export --platform web --output-dir ${resolve(root, 'e2e/.web')}`, resolve(root, 'apps/business-mobile'), {
+run(`npx expo export --platform web --clear --output-dir ${resolve(root, 'e2e/.web')}`, resolve(root, 'apps/business-mobile'), {
   EXPO_PUBLIC_API_URL: `http://localhost:${API_PORT}`,
   CI: '1',
 });
