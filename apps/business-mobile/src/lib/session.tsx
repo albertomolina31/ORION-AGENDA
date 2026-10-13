@@ -14,6 +14,7 @@ const BUSINESS_KEY = 'orion.session.business';
 /** Copia de /me para poder abrir la app sin conexión (datos no secretos, almacenamiento privado de la app). */
 const ME_KEY = 'orion.session.me';
 const CACHE_KEY = 'orion.cache';
+const WIDGET_SNAPSHOT_KEY = 'orion.widget.snapshot';
 const CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
 
 type Status = 'loading' | 'signedOut' | 'signedIn';
@@ -63,6 +64,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const resetCache = useCallback(async () => {
     queryClient.clear();
     await AsyncStorage.removeItem(CACHE_KEY).catch(() => undefined);
+    // La instantánea de los widgets sigue la misma regla que la caché (ver lib/widgets.ts).
+    await AsyncStorage.removeItem(WIDGET_SNAPSHOT_KEY).catch(() => undefined);
     setQueryClient(makeQueryClient());
   }, [queryClient]);
 

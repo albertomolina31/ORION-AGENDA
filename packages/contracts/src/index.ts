@@ -10,3 +10,4 @@ export * from './events.js';
 export * from './config.js';
 export * from './notifications.js';
 export * from './labels.js';
+export * from './widgets.js';

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { WidgetPrivacy } from './widgets.js';
 import { Id, LocalTime, Money } from './common.js';
 import { BusinessCategory, BusinessStatus } from './identity.js';
 import { RequestId } from './common.js';
@@ -48,6 +49,8 @@ export const BusinessProfile = z.object({
   status: BusinessStatus,
   acceptingExternalBookings: z.boolean(),
   policy: BookingPolicy,
+  /** Máximo que los widgets de inicio pueden mostrar de un cliente; cada persona puede ocultar más. */
+  widgetPrivacy: WidgetPrivacy,
   setupChecklist: z.array(SetupItem),
   integrations: z.array(Integration),
 });
@@ -153,5 +156,7 @@ export const UpdateProfileRequest = z.object({
   category: BusinessCategory,
   /** Pausar la recepción de reservas externas no suspende la cuenta (L02). */
   acceptingExternalBookings: z.boolean(),
+  /** Si se omite, se conserva el valor actual. */
+  widgetPrivacy: WidgetPrivacy.optional(),
 });
 export type UpdateProfileRequest = z.input<typeof UpdateProfileRequest>;

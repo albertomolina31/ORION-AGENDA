@@ -43,10 +43,18 @@ Pantallas adicionales del inventario: detalle de cita y acciones (UI07), nueva c
 - **Animaciones tipo Duolingo:** Ori con squash & stretch al tocarlo y saltos de celebración, confeti radial, destellos al completar el anillo del día, sacudida en errores de formulario y toasts, chips con rebote. Todo respeta "Reducir movimiento".
 - **Widgets:** plan en [`widgets-plan.md`](widgets-plan.md) (instantánea escrita por la app, sin tokens en fase 1, iniciales por defecto).
 
+## Iteración 13-oct-2026: widgets W1–W2
+
+- Diseño aprobado: Próxima cita (pequeño), Agenda del día (mediano), Resumen semanal (grande, cada día abre la agenda en esa fecha), privacidad "Información oculta", estados sin citas y sin conexión.
+- `WidgetSnapshot` + `buildWidgetSnapshot` (función pura, 10 pruebas) en `packages/contracts`; sincronización desde la app (`WidgetSync`, simulada en almacenamiento local hasta el development build).
+- Privacidad: el negocio fija el máximo (`widgetPrivacy` en el perfil, por defecto iniciales) y cada persona puede ocultar más en su teléfono.
+- Pantalla *Negocio → Widgets* con vista previa de datos reales; deep link `orionbusiness://agenda?fecha=`.
+- Los widgets no admiten animación continua: Ori cambia de pose; en iOS hay transiciones de contenido y cuenta regresiva. Detalle en `widgets-plan.md`; cómo compilarlos y verlos en `emuladores.md` (iOS: `expo-widgets`, oficial de Expo).
+
 ## Siguiente bloque sugerido
 
 1. Retomar D09: esquema PostgreSQL, migraciones y pruebas de concurrencia reales (P09, P22).
 2. Decidir autenticación y reemplazar el login simulado (P14).
-3. Widgets W1–W3 (contrato, preferencia de privacidad y puente) junto con el primer development build.
+3. Widgets W3–W6 con el primer development build (requiere Mac y cuentas de la organización, ver `emuladores.md`).
 4. Development build en iPhone/Android físicos (P12).
 5. Entregar a Carlos y Sergio `docs/openapi.json` y los fixtures (P06).

@@ -28,6 +28,8 @@ export interface Business {
   currency: string;
   status: 'DRAFT' | 'ACTIVE' | 'SUSPENDED';
   acceptingExternalBookings: boolean;
+  /** Máximo visible en widgets: FULL | INITIALS | HIDDEN. */
+  widgetPrivacy: 'FULL' | 'INITIALS' | 'HIDDEN';
   /** Política vigente (la última de `policyHistory`). */
   policy: BookingPolicy;
   /** Todas las versiones; las citas guardan la versión con la que se reservaron. */

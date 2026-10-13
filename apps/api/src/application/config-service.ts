@@ -502,7 +502,7 @@ export class BusinessSettingsService {
     await this.idempotency.execute(actor, 'business.profile', requestId, payload, async () => {
       const b = await this.business(actor.businessId);
       // La zona horaria y la moneda no se editan en el piloto: cambiarlas reinterpretaría citas e importes.
-      await this.repos.businessWriter.update({ ...b, name: req.name, category: req.category, acceptingExternalBookings: req.acceptingExternalBookings });
+      await this.repos.businessWriter.update({ ...b, name: req.name, category: req.category, acceptingExternalBookings: req.acceptingExternalBookings, widgetPrivacy: req.widgetPrivacy ?? b.widgetPrivacy });
       return { ok: true };
     });
     return this.profile(actor);

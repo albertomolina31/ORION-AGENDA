@@ -1,4 +1,5 @@
 import type { BookingPolicy, BusinessCategory, PolicyChangeResult } from '@orion/contracts';
+import { WIDGET_PRIVACY_LABELS, WidgetPrivacy } from '@orion/contracts';
 import { SLOT_GRANULARITIES } from '@orion/contracts';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, Check, ChevronDown, ChevronUp, History, Store, TriangleAlert } from 'lucide-react-native';
@@ -68,6 +69,7 @@ export default function Rules() {
   const [name, setName] = useState('');
   const [category, setCategory] = useState<BusinessCategory>('OTHER');
   const [accepting, setAccepting] = useState(true);
+  const [widgetPrivacy, setWidgetPrivacy] = useState<WidgetPrivacy>('INITIALS');
   const [policy, setPolicy] = useState<PolicyFields | null>(null);
   const [review, setReview] = useState<PolicyChangeResult | null>(null);
   const [reviewing, setReviewing] = useState(false);
@@ -78,16 +80,17 @@ export default function Rules() {
     setName(p.name);
     setCategory(p.category);
     setAccepting(p.acceptingExternalBookings);
+    setWidgetPrivacy(p.widgetPrivacy);
     const { version: _v, ...rest } = p.policy;
     setPolicy(rest);
     setReview(null);
   }, [p]);
 
-  const profileDirty = !!p && (name.trim() !== p.name || category !== p.category || accepting !== p.acceptingExternalBookings);
+  const profileDirty = !!p && (name.trim() !== p.name || category !== p.category || accepting !== p.acceptingExternalBookings || widgetPrivacy !== p.widgetPrivacy);
   const policyDirty = !!p && !!policy && (Object.keys(policy) as Array<keyof PolicyFields>).some((k) => policy[k] !== p.policy[k]);
 
   const saveProfile = useIdempotentMutation(
-    (_: void, requestId) => endpoints.updateProfile(m.businessId, { requestId, name: name.trim(), category, acceptingExternalBookings: accepting }),
+    (_: void, requestId) => endpoints.updateProfile(m.businessId, { requestId, name: name.trim(), category, acceptingExternalBookings: accepting, widgetPrivacy }),
     [['profile', m.businessId], ['home', m.businessId]],
   );
   const savePolicy = useIdempotentMutation(
@@ -173,6 +176,19 @@ export default function Rules() {
               </Text>
             </View>
           </Card>
+          <View style={{ gap: spacing.xs }}>
+            <Text variant="captionStrong" color={colors.textMuted}>
+              Widgets de inicio: máximo que se muestra del cliente
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+              {WidgetPrivacy.options.map((v) => (
+                <Chip key={v} label={WIDGET_PRIVACY_LABELS[v]} selected={widgetPrivacy === v} onPress={() => canEdit && setWidgetPrivacy(v)} />
+              ))}
+            </View>
+            <Text variant="caption" color={colors.textMuted}>
+              Cada persona puede ocultar más en su teléfono, nunca mostrar más. La pantalla bloqueada siempre oculta los nombres.
+            </Text>
+          </View>
           {canEdit && profileDirty ? (
             <Button requiresOnline
               label="Guardar perfil"

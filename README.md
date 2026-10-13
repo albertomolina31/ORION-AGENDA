@@ -13,7 +13,7 @@ apps/
 packages/
   contracts/         Esquemas zod compartidos (tipos, validación y OpenAPI)
   design-tokens/     Colores, tipografía, espaciado (dirección visual aprobada)
-docs/                stack.md, decisiones.md, openapi.json, widgets-plan.md, ori-animacion-y-diseno.md
+docs/                stack.md, decisiones.md, openapi.json, widgets-plan.md, emuladores.md, ori-animacion-y-diseno.md
 ```
 
 ## Arranque
@@ -33,7 +33,7 @@ Usuarios de prueba (login simulado): **Alberto** (dueño de dos negocios), **Car
 
 ```bash
 pnpm typecheck   # todo el monorepo
-pnpm test        # 67 pruebas de la API: reglas, casos de aceptación, configuración, políticas y HTTP
+pnpm test        # 67 pruebas de la API + 10 de la instantánea de widgets (packages/contracts)
 pnpm openapi     # regenera docs/openapi.json desde los esquemas
 ```
 

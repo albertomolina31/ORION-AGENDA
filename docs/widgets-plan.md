@@ -1,112 +1,153 @@
 # Plan de implementación: widgets de Orion Business (iOS y Android)
 
-**Estado:** plan propuesto, sin código nativo todavía. En el documento maestro los widgets están en "Posteriores" (sección 2); este plan deja lista la decisión técnica para cuando se haga el primer development build.
+**Estado (13-oct-2026):**
+- **W1 y W2 hechos:**
+  - contrato de la instantánea con pruebas;
+  - privacidad por negocio y por persona;
+  - sincronización desde la app;
+  - pantalla **Negocio → Widgets** con vista previa usando datos reales.
+- **Siguiente paso:** los widgets nativos (W3 en adelante) necesitan un *development build*. Cómo compilarlos y verlos está en [`emuladores.md`](emuladores.md).
+
+En el documento maestro los widgets están en "Posteriores" (sección 2). Este plan sigue la propuesta visual aprobada: **"Widgets del negocio · Tu agenda, a un vistazo"**.
 
 ## 1. Qué problema resuelven
 
 El dueño, la recepción o un profesional quieren saber **qué sigue** sin abrir la app:
-- la próxima cita (hora, cliente, servicio, profesional);
-- cuántas solicitudes esperan aprobación (y cuándo vence la más próxima);
-- el avance del día (atendidas / programadas).
+- la próxima cita;
+- la agenda de hoy;
+- cómo viene la semana.
 
-El widget **solo muestra y abre**. Nunca aprueba, cancela ni completa citas: toda acción ocurre dentro de la app, con la sesión y los permisos revalidados (regla "no hay gestos invisibles que cambien el estado de una cita").
+El widget **solo muestra y abre**. Nunca aprueba, cancela ni completa citas. Toda acción ocurre dentro de la app, con la sesión y los permisos revalidados (regla "no hay gestos invisibles que cambien el estado de una cita").
 
-## 2. Catálogo de widgets
+## 2. Catálogo (diseño aprobado)
 
-| Widget | iOS (WidgetKit) | Android (App Widget) | Contenido | Al tocar |
-|---|---|---|---|---|
-| **Próxima cita** | Pequeño (`systemSmall`) | 2×2 | Hora grande, cliente, servicio, color del profesional, estado | Detalle de la cita (`orionbusiness://cita/<id>`) |
-| **Mi día** | Mediano (`systemMedium`) | 4×2 | Anillo atendidas/programadas, próximas 2–3 citas, pendientes | Agenda del día (`orionbusiness://agenda`) |
-| **Pendientes** | Pequeño | 2×1 / 2×2 | Número de solicitudes y vencimiento más cercano | Bandeja de pendientes (`orionbusiness://pendientes`) |
-| **Pantalla bloqueada** (fase 2) | `accessoryCircular`, `accessoryRectangular` | — | Solo hora de la próxima cita y número de pendientes, **sin nombres** | Agenda |
+| # | Widget | iOS | Android | Contenido | Al tocar |
+|---|---|---|---|---|---|
+| 01 | **Próxima cita** | Pequeño (`systemSmall`) | 2×2 | Negocio, hora grande, servicio, estado (Confirmada / Por aprobar), "Con Ana", "Actualizado 09:40", Ori (cabeza) | Detalle de la cita `orionbusiness://cita/<id>` |
+| 02 | **Agenda del día** | Mediano (`systemMedium`) | 4×2 | Fondo azul noche con degradado, "Hoy · Negocio", próximas 3 citas (hora · servicio · profesional), Ori con la pose del momento | Agenda de hoy `orionbusiness://agenda` |
+| 03 | **Resumen semanal** | Grande (`systemLarge`) | 4×4 | Rango "12–18 de octubre", tira de días con hoy resaltado, citas por día o "Cerrado" | **Cada día** abre la agenda en esa fecha: `orionbusiness://agenda?fecha=AAAA-MM-DD` |
+| — | Pantalla bloqueada (fase 2) | `accessoryRectangular` / `accessoryCircular` | — | Hora de la próxima cita y número de citas, **sin nombres** | Agenda |
+| — | Actividad en vivo "Cita en curso" (fase 2, solo iPhone) | Live Activity / Isla Dinámica | — | Cliente según privacidad, cuenta regresiva hasta el fin, barra de avance | Detalle de la cita |
 
-Diseño: misma identidad v2 (azul noche con degradado violeta, marfil, dorado decorativo, Plus Jakarta Sans). Ori aparece pequeño solo en estados vacíos ("Día libre", pose dormido) y de día completo (pose celebrando). Modo oscuro nativo en ambos sistemas.
+**Estados:**
 
-## 3. Arquitectura de datos (recomendada: "instantánea escrita por la app")
+| Estado | Qué muestra |
+|---|---|
+| Sin citas | "Día libre: hoy no hay citas." con Ori dormido |
+| Cerrado | "Hoy el negocio está cerrado." |
+| Día completo | "¡Día completo!" con Ori celebrando |
+| Sin conexión o datos viejos | Siempre "Actualizado HH:mm". Pasadas 2 horas: "Abre Orion para actualizar" |
+| Privacidad "Información oculta" | "10:00 · Próxima cita" y un candado |
+
+## 3. Animaciones: qué se puede y qué no
+
+iOS y Android **dibujan el widget como una imagen**. No hay un proceso de la app corriendo dentro del widget. Por eso:
+
+| | iOS | Android |
+|---|---|---|
+| Animación continua (Ori flotando, órbita girando) | ❌ No permitido | ❌ No permitido |
+| Pose de Ori según el momento (saluda, celebra, duerme) | ✅ (campo `oriPose`) | ✅ |
+| Transición al cambiar el contenido (la hora "rueda", la lista se desliza) | ✅ iOS 17+ (`contentTransition(.numericText())`, `.transition`) | ⚠️ Cambio directo, sin animación |
+| Cuenta regresiva en vivo ("Empieza en 12 min") | ✅ `Text(date, style: .timer)` | ✅ `Chronometer` en cuenta regresiva |
+| Avanzar sola a la siguiente cita sin abrir la app | ✅ Una entrada de timeline por cita (`upcoming`) | ⚠️ `updatePeriodMillis` (mínimo 30 min) o al abrir la app |
+| Más animación (barra de progreso, Isla Dinámica) | ✅ Actividad en vivo (fase 2) | — |
+
+Las animaciones tipo Duolingo (Ori saltando, confeti) **siguen dentro de la app**. En el widget, Ori es una imagen con la pose adecuada.
+
+## 4. Arquitectura de datos: "instantánea escrita por la app"
 
 ```
-App (React Native)                         Widget nativo
-  ├─ obtiene /home y /appointments  ─┐
-  ├─ arma WidgetSnapshot (JSON)      │      ├─ lee la instantánea compartida
-  └─ la guarda en almacenamiento  ───┴────▶ ├─ muestra los datos + "actualizado HH:mm"
-     compartido y pide recargar            └─ abre deep links
+App (React Native)                                Widget nativo
+  ├─ /home + /appointments (semana) + /schedules ─┐
+  ├─ buildWidgetSnapshot() (packages/contracts)   │   ├─ lee la instantánea compartida
+  └─ widgetBridge.setSnapshot() ──────────────────┴─▶ ├─ dibuja + "Actualizado HH:mm"
+                                                      └─ abre deep links
 ```
 
-- **Almacenamiento compartido:** iOS → `UserDefaults` del **App Group** `group.labs.orion.business`; Android → `SharedPreferences` privadas de la app.
-- **Cuándo se escribe:** después de cada carga correcta de Inicio/Agenda, tras cada mutación exitosa, al volver a primer plano y en una tarea en segundo plano periódica (`expo-background-task`, mejor esfuerzo).
-- **Línea de tiempo (iOS):** la app escribe también las próximas citas del día para que WidgetKit programe entradas por hora sin red (la tarjeta "Próxima cita" avanza sola cuando una cita termina).
-- **Sin tokens en el widget (fase 1):** el widget nunca llama a la API. Así no se comparten credenciales fuera de la app ni hace falta autorizar otro proceso. Desventaja: si la app no se abre por días, los datos envejecen; por eso el widget siempre muestra la hora de actualización y, si pasan más de 2 horas, "Abre Orion para actualizar".
-- **Fase 2 opcional:** endpoint `GET /v1/businesses/:id/widget-summary` (respuesta mínima) y un token de solo lectura, de alcance limitado y revocable, compartido por Keychain con App Group. Solo si la frescura de la fase 1 resulta insuficiente en el piloto.
+- **Hecho:**
+  - `WidgetSnapshot` y `buildWidgetSnapshot()` en `packages/contracts/src/widgets.ts`, función pura con 10 pruebas en `packages/contracts/test/widgets.test.ts`.
+  - La instantánea trae los textos ya formateados en la zona del negocio (`timeLabel`, `dayLabel`, `countLabel`, `rangeLabel`, `generatedAtLabel`). Así el código nativo solo dibuja y no repite reglas.
+  - **Sincronización:** `WidgetSync`, en `apps/business-mobile/src/lib/widgets.ts`, la recalcula cada vez que cambian los datos de Inicio, la agenda semanal, los horarios o la privacidad.
+  - Hoy `widgetBridge` la guarda en el almacenamiento de la app (**simulación**: ningún widget la lee todavía).
+- **Puente nativo (W3):**
+  - iOS: `UserDefaults` del **App Group** `group.labs.orion.business`, más `WidgetCenter.shared.reloadAllTimelines()`.
+  - Android: `SharedPreferences`, más una petición de actualización del widget.
+- **Sin tokens en el widget (fase 1):** el widget nunca llama a la API. Si la app no se abre por horas, el widget lo indica.
+- **Fase 2 opcional:** `GET /v1/businesses/:id/widget-summary` con un token de solo lectura revocable. Solo si el piloto demuestra que la frescura no alcanza.
 
-### Contrato de la instantánea (borrador, en `packages/contracts`)
+### Contrato (resumen; la fuente de verdad es `widgets.ts`)
 
 ```ts
 WidgetSnapshot = {
-  schemaVersion: 1,
-  generatedAt: string,          // ISO; se muestra como "actualizado HH:mm"
-  businessId: string,
-  businessName: string,
-  timezone: string,             // las horas se formatean en la zona del negocio
-  privacy: 'FULL' | 'INITIALS' | 'HIDDEN', // preferencia del usuario
-  day: { scheduled: number, completed: number, pending: number },
-  nextPending: { expiresAt: string } | null,
-  upcoming: Array<{             // máx. 6, ya filtradas por permisos del usuario
-    appointmentId: string,
-    startsAt: string, endsAt: string,
-    customerLabel: string,      // según privacy: "Mariana López" | "M. L." | "Cliente"
-    serviceName: string,
-    professionalName: string,
-    colorKey: string,
-    status: 'CONFIRMED' | 'PENDING_APPROVAL',
-  }>,
+  schemaVersion: 1, generatedAt, generatedAtLabel: '09:40',
+  businessId, businessName, timezone, privacy: 'FULL' | 'INITIALS' | 'HIDDEN',
+  today, day: { scheduled, completed, pending }, nextPendingExpiresAt,
+  upcoming: WidgetAppointment[]  // máx. 6, futuras, vigentes, ya filtradas por permisos
+  week: { from, to, rangeLabel: '12–18 de octubre', days: WidgetWeekDay[7] },
+  oriPose: 'wave' | 'calendar' | 'celebrate' | 'sleep',
+  emptyMessage,
 }
+WidgetAppointment = { appointmentId, startsAt, endsAt, date, timeLabel, dayLabel,
+  customerLabel | null, serviceName | null, professionalName | null,   // null si HIDDEN
+  colorKey, status, statusLabel, deepLink }
+WidgetWeekDay = { date, weekdayShort, dayNumber, count, closed, isToday, countLabel, deepLink }
 ```
 
-## 4. Privacidad y seguridad
+## 5. Privacidad (configurable por negocio y por persona)
 
-- La pantalla de inicio la puede ver cualquier persona que tome el teléfono: preferencia **"Mostrar en widgets"** con opciones *Nombre completo / Iniciales / Ocultar* (por defecto **Iniciales**). En pantalla bloqueada, siempre oculto.
-- Nada clínico ni notas: solo nombre del servicio.
-- **Cerrar sesión o cambiar de negocio borra la instantánea** y recarga los widgets (mismo criterio que la caché privada, sección 14).
-- Si el usuario pierde el acceso al negocio, la siguiente apertura de la app borra la instantánea.
-- Un profesional solo ve sus citas: la instantánea se arma con los datos que la API ya filtró por permisos.
+- **Negocio:** en *Perfil y reglas* se fija el máximo que pueden mostrar los widgets: *Nombre completo*, *Solo iniciales* (por defecto) o *Información oculta*. Lo cambia quien tenga `business.configure` y se guarda en la API (`widgetPrivacy` del perfil).
+- **Persona:** en *Negocio → Widgets* cada profesional elige en su teléfono. **Puede ocultar más, nunca mostrar más** (`effectiveWidgetPrivacy`).
+- **Pantalla bloqueada:** nunca muestra nombres.
+- **Qué no se muestra nunca:** notas ni datos clínicos; solo el nombre del servicio.
+- **Cerrar sesión o cambiar de negocio** borra la instantánea, igual que la caché privada.
+- **Permisos:** un profesional solo ve sus citas, porque la instantánea se arma con datos que la API ya filtró.
 
-## 5. Tecnología
+## 6. Tecnología
 
 | Plataforma | Opción recomendada | Por qué | Alternativa |
 |---|---|---|---|
-| iOS | **`@bacons/apple-targets`** (config plugin de Expo) + extensión **SwiftUI/WidgetKit** escrita en Swift | Integra el target del widget en *Continuous Native Generation* sin tocar `ios/` a mano; SwiftUI es lo nativo para widgets | `react-native-widget-extension` |
-| Android | **`react-native-android-widget`** (incluye plugin de Expo) | Los widgets se describen con componentes en JS/TS y se renderizan como RemoteViews; reutiliza tokens de diseño | Jetpack Glance (Kotlin) con un config plugin propio |
-| Puente de datos | Módulo Expo pequeño (`modules/widget-bridge`) con `setSnapshot(json)` y `reloadWidgets()` | Una sola API para ambas plataformas; en iOS escribe en el App Group y llama a `WidgetCenter.shared.reloadAllTimelines()` | Paquetes de terceros de "shared preferences" |
+| iOS | **`expo-widgets`** (oficial de Expo, en SDK 57 `~57.0.24`; estable desde SDK 56) | Widgets y Live Activities escritos en **JSX con componentes de Expo UI** (SwiftUI por debajo), sin un target Swift aparte. Lo mantiene Expo, igual que el SDK | `@bacons/apple-targets` más una extensión SwiftUI/WidgetKit escrita en Swift. Se usa si `expo-widgets` no cubre algo, como enlaces por día en el widget grande o `contentTransition` |
+| Android | **`react-native-android-widget`** (incluye plugin de Expo) | Widgets en JSX/TS renderizados como RemoteViews. Reutiliza tokens. Trae `WidgetPreview` para diseñar dentro de la app | Jetpack Glance (Kotlin) con un config plugin propio |
+| Puente de datos | Módulo pequeño `modules/widget-bridge`, o la API de datos compartidos de `expo-widgets` en iOS | Misma interfaz que el `widgetBridge` actual: `setSnapshot(json)` y `clear()` | — |
 
-Requisitos: **development build** (no funciona en Expo Go), App Group y capacidades en la cuenta de Apple de la organización (D07), perfiles EAS `development` / `preview` / `production`.
+**Aviso:** `expo-widgets` es **solo iOS**. Sus docs no se pudieron abrir desde este entorno; antes de W4 hay que confirmar en un Mac:
+- que permite un enlace por día en el widget grande;
+- cómo comparte datos con la app;
+- que admite transiciones de contenido.
 
-## 6. Pasos de implementación
+**Requisitos:**
+- *development build* (no funciona en Expo Go ni en web);
+- App Group en la cuenta de Apple de la organización (D07);
+- perfiles EAS `development`, `ios-simulator` y `preview`.
 
-| # | Tarea | Resultado verificable |
-|---|---|---|
-| W1 | Contrato `WidgetSnapshot` en `packages/contracts` y función pura `buildWidgetSnapshot(home, agenda, privacy)` con pruebas | Pruebas de privacidad, permisos y zona horaria pasan |
-| W2 | Preferencia "Mostrar en widgets" en Cuenta | Se guarda por dispositivo; por defecto Iniciales |
-| W3 | Módulo `widget-bridge` (iOS App Group + Android SharedPreferences) y escritura tras cargas/mutaciones; borrado al cerrar sesión | Inspección del almacenamiento compartido en simulador/emulador |
-| W4 | Widget iOS "Próxima cita" (pequeño) con timeline por cita, estado vacío y "actualizado HH:mm" | Probado en iPhone real, modo claro/oscuro, texto grande |
-| W5 | Widget Android "Próxima cita" 2×2 | Probado en Android real, varios launchers |
-| W6 | Widgets "Mi día" y "Pendientes" en ambas plataformas | Deep links abren la pantalla correcta con sesión válida |
-| W7 | Actualización en segundo plano (`expo-background-task`) y manejo de datos viejos (> 2 h) | El widget nunca muestra datos de otra sesión ni sin hora |
-| W8 | Pantalla bloqueada iOS (fase 2) y evaluación de token de solo lectura | Decisión documentada según el piloto |
+## 7. Pasos
 
-Cada widget se cierra con la misma regla del plan: **probado en dispositivo real**, no solo en simulador.
+| # | Tarea | Estado | Resultado verificable |
+|---|---|---|---|
+| W1 | Contrato `WidgetSnapshot` y `buildWidgetSnapshot` con pruebas | ✅ | 10 pruebas: semana, cerrados, orden, vencidas, privacidad, estados, cambio de mes, datos viejos |
+| W2 | Privacidad por negocio (API) y por persona (teléfono); sincronización; vista previa en la app; deep link `agenda?fecha=` | ✅ | Pantalla *Widgets* con datos reales; la agenda abre la fecha del enlace |
+| W3 | `eas.json` con perfiles, App Group, puente nativo (iOS App Group / Android SharedPreferences) y borrado al cerrar sesión | Pendiente (Mac + D07) | Inspección del almacenamiento compartido en simulador y emulador |
+| W4 | iOS: Próxima cita (pequeño) con timeline por cita y transición numérica | Pendiente | Probado en simulador y en iPhone real, modo claro/oscuro, texto grande |
+| W5 | Android: Próxima cita 2×2 | Pendiente | Emulador Pixel API 36 y un Samsung real |
+| W6 | Agenda del día y Resumen semanal en ambas plataformas, con enlace por día | Pendiente | Los deep links abren la pantalla correcta con sesión válida |
+| W7 | Actualización en segundo plano (`expo-background-task`) y datos viejos (> 2 h) | Pendiente | El widget nunca muestra datos de otra sesión ni sin hora |
+| W8 | Fase 2: pantalla bloqueada, Actividad en vivo "Cita en curso" y evaluación del token de solo lectura | Pendiente | Decisión documentada según el piloto |
 
-## 7. Riesgos
+Cada widget se cierra con la regla del plan: **probado en dispositivo real**, no solo en simulador.
+
+## 8. Riesgos
 
 | Riesgo | Mitigación |
 |---|---|
-| Datos desactualizados si no se abre la app | Hora visible, aviso a las 2 h, tarea en segundo plano; fase 2 con token de lectura si hace falta |
-| Mostrar datos de clientes a terceros | Iniciales por defecto, oculto en pantalla bloqueada, borrado al cerrar sesión |
+| Datos desactualizados si no se abre la app | Hora visible, aviso a las 2 h, tarea en segundo plano. En fase 2, token de lectura si hace falta |
+| Mostrar datos de clientes a terceros | Iniciales por defecto, máximo por negocio, oculto en pantalla bloqueada, borrado al cerrar sesión |
 | Presupuesto de recargas de WidgetKit | Timeline precalculada por citas; recargar solo tras cambios reales |
-| Diferencias entre launchers de Android | Diseños con tamaños mínimos y pruebas en Pixel/Samsung |
-| Código Swift dentro de un equipo JS | Widgets iOS pequeños y aislados; toda la lógica de datos vive en TS (W1) |
+| Diferencias entre launchers de Android (One UI) | Tamaños mínimos y pruebas en Pixel y Samsung |
+| `expo-widgets` no cubre todo el diseño | Alternativa `@bacons/apple-targets` con SwiftUI; la lógica de datos ya vive en TS (W1) |
 
-## 8. Dependencias con otras decisiones
+## 9. Dependencias
 
-- **D07** (cuentas Apple/Google de la organización y App Group).
-- **P12** (development builds en dispositivos reales).
-- **P14** (autenticación real) para la fase 2 con token de lectura.
+- **D07:** cuentas Apple/Google de la organización y App Group.
+- **P12:** development builds en dispositivos reales.
+- **P14:** autenticación real, para el token de lectura de la fase 2.
+- **Equipo:** ver [`emuladores.md`](emuladores.md).

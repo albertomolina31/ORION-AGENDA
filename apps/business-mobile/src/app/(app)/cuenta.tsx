@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { ArrowLeftRight, LogOut } from 'lucide-react-native';
+import { ArrowLeftRight, LayoutGrid, LogOut } from 'lucide-react-native';
 import { View } from 'react-native';
 import { useSession } from '@/lib/session';
 import { Avatar, Button, Card, colors, Note, Screen, spacing, StackHeader, Text } from '@/ui';
@@ -24,6 +24,7 @@ export default function Account() {
         </View>
       </Card>
       <Note tone="warning" title="Sesión simulada" body="La autenticación real (contraseña, recuperación, biometría opcional) se definirá antes del piloto." />
+      <Button label="Widgets de inicio" icon={LayoutGrid} variant="outline" onPress={() => router.push('/widgets')} />
       {me && me.memberships.length > 1 ? <Button label="Cambiar de negocio" icon={ArrowLeftRight} variant="outline" onPress={() => router.push('/negocios')} /> : null}
       <Button
         label="Cerrar sesión"

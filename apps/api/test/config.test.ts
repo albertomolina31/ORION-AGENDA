@@ -235,7 +235,9 @@ describe('Reglas de reserva versionadas (L17)', () => {
 
   it('Perfil: cambiar categoría cambia el vocabulario; pausar reservas externas no suspende', async () => {
     const p = await c.settings.updateProfile(owner, { requestId: req(), name: 'Estudio Órbita Centro', category: 'CLINIC', acceptingExternalBookings: false });
-    expect(p).toMatchObject({ name: 'Estudio Órbita Centro', status: 'ACTIVE', acceptingExternalBookings: false });
+    expect(p).toMatchObject({ name: 'Estudio Órbita Centro', status: 'ACTIVE', acceptingExternalBookings: false, widgetPrivacy: 'INITIALS' });
+    const hidden = await c.settings.updateProfile(owner, { requestId: req(), name: 'Estudio Órbita Centro', category: 'CLINIC', acceptingExternalBookings: false, widgetPrivacy: 'HIDDEN' });
+    expect(hidden.widgetPrivacy).toBe('HIDDEN');
     const me = await c.access.me('u_alberto');
     expect(me.memberships.find((m) => m.businessId === ORBITA)!.vocabulary.customerPlural).toBe('Pacientes');
     // La agenda interna sigue operando.

@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Bell, CalendarDays, ChevronRight, FileText, Info, Scissors, ShieldCheck, Store, Users, Wallet } from 'lucide-react-native';
+import { Bell, CalendarDays, LayoutGrid, ChevronRight, FileText, Info, Scissors, ShieldCheck, Store, Users, Wallet } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { WhatsAppIcon } from '@/features/WhatsAppIcon';
 import { useProfile } from '@/lib/queries';
@@ -97,6 +97,7 @@ export default function Negocio() {
 
       <Section title="Administración">
         <ListRow icon={Bell} title="Notificaciones" subtitle="Avisos para tu equipo" onPress={() => router.push('/notificaciones')} />
+        <ListRow icon={LayoutGrid} title="Widgets" subtitle="Vista previa y privacidad en tu pantalla de inicio" onPress={() => router.push('/widgets')} />
         <ListRow icon={ShieldCheck} title="Privacidad y datos" subtitle="Consentimientos y solicitudes" last />
       </Section>
 

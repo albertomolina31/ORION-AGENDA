@@ -93,6 +93,7 @@ export class BusinessService {
       status: b.status,
       acceptingExternalBookings: b.acceptingExternalBookings && setupChecklist.every((i) => i.done),
       policy: b.policy,
+      widgetPrivacy: b.widgetPrivacy,
       setupChecklist,
       integrations: this.integrations(b),
     };

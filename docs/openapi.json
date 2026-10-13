@@ -1057,6 +1057,14 @@
                       ],
                       "additionalProperties": false
                     },
+                    "widgetPrivacy": {
+                      "type": "string",
+                      "enum": [
+                        "FULL",
+                        "INITIALS",
+                        "HIDDEN"
+                      ]
+                    },
                     "setupChecklist": {
                       "type": "array",
                       "items": {
@@ -1141,6 +1149,7 @@
                     "status",
                     "acceptingExternalBookings",
                     "policy",
+                    "widgetPrivacy",
                     "setupChecklist",
                     "integrations"
                   ],
@@ -1256,6 +1265,14 @@
                   },
                   "acceptingExternalBookings": {
                     "type": "boolean"
+                  },
+                  "widgetPrivacy": {
+                    "type": "string",
+                    "enum": [
+                      "FULL",
+                      "INITIALS",
+                      "HIDDEN"
+                    ]
                   }
                 },
                 "required": [
@@ -1381,6 +1398,14 @@
                       ],
                       "additionalProperties": false
                     },
+                    "widgetPrivacy": {
+                      "type": "string",
+                      "enum": [
+                        "FULL",
+                        "INITIALS",
+                        "HIDDEN"
+                      ]
+                    },
                     "setupChecklist": {
                       "type": "array",
                       "items": {
@@ -1465,6 +1490,7 @@
                     "status",
                     "acceptingExternalBookings",
                     "policy",
+                    "widgetPrivacy",
                     "setupChecklist",
                     "integrations"
                   ],

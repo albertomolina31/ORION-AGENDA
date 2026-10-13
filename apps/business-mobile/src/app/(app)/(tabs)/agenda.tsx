@@ -1,7 +1,7 @@
 import type { AgendaResponse, Appointment } from '@orion/contracts';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock, Plus } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppointmentRow, BlockRow, FreeSlot, NowMarker } from '@/features/AppointmentRow';
 import { addDays, fmt, localDate, noonOf, startOfWeek } from '@/lib/format';
@@ -38,7 +38,12 @@ export default function Agenda() {
   const m = useBusiness();
   const home = useHome();
   const today = home.data?.date;
-  const [selected, setSelected] = useState<string | null>(null);
+  // `orionbusiness://agenda?fecha=AAAA-MM-DD` (widget de resumen semanal) abre ese día.
+  const { fecha } = useLocalSearchParams<{ fecha?: string }>();
+  const [selected, setSelected] = useState<string | null>(fecha && /^\d{4}-\d{2}-\d{2}$/.test(fecha) ? fecha : null);
+  useEffect(() => {
+    if (fecha && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) setSelected(fecha);
+  }, [fecha]);
   const day = selected ?? today ?? null;
   const [mode, setMode] = useState<'day' | 'week'>('day');
   const [pro, setPro] = useState<string | undefined>(undefined);
