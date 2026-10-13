@@ -90,6 +90,7 @@ export function buildSeed(now: Date): SeedResult {
     status: 'ACTIVE',
     acceptingExternalBookings: true,
     policy: defaultPolicy,
+    policyHistory: [{ policy: defaultPolicy, changedAt: today.minus({ days: 200 }).toJSDate(), changedBy: 'Alberto' }],
     integrations: { whatsapp: 'CONNECTED', appleWallet: 'NOT_CONNECTED', googleWallet: 'NOT_CONNECTED' },
     features: { loyalty: true, campaigns: true },
   };
@@ -102,6 +103,7 @@ export function buildSeed(now: Date): SeedResult {
     status: 'ACTIVE',
     acceptingExternalBookings: false,
     policy: { ...defaultPolicy, confirmationMode: 'AUTOMATIC' },
+    policyHistory: [{ policy: { ...defaultPolicy, confirmationMode: 'AUTOMATIC' }, changedAt: today.minus({ days: 90 }).toJSDate(), changedBy: 'Alberto' }],
     integrations: { whatsapp: 'NOT_CONNECTED', appleWallet: 'NOT_CONNECTED', googleWallet: 'NOT_CONNECTED' },
     features: { loyalty: false, campaigns: false },
   };

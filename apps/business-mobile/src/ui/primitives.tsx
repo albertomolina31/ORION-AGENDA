@@ -1,7 +1,7 @@
 import { ChevronRight, type LucideIcon } from 'lucide-react-native';
 import { type ReactNode, useEffect, useState } from 'react';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-import { haptic, PressableScale } from './motion';
+import { haptic, PressableScale, usePop, useShake } from './motion';
 import { Pressable, StyleSheet, Switch, TextInput, type TextInputProps, View } from 'react-native';
 import { Text } from './Text';
 import { colors, radius, spacing, touchTarget } from './theme';
@@ -91,7 +91,9 @@ export function Chip({
   dark?: boolean;
 }) {
   const bg = selected ? (dark ? colors.night : colors.primary) : colors.surface;
+  const pop = usePop(selected, 1.08);
   return (
+    <Animated.View style={pop}>
     <Pressable
       onPress={() => {
         haptic.select();
@@ -107,6 +109,7 @@ export function Chip({
         {label}
       </Text>
     </Pressable>
+    </Animated.View>
   );
 }
 
@@ -232,8 +235,13 @@ export function Field({
   hint,
   ...input
 }: TextInputProps & { label: string; error?: string; hint?: string }) {
+  const { style: shakeStyle, shake } = useShake();
+  useEffect(() => {
+    if (error) shake();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error]);
   return (
-    <View style={{ gap: spacing.xs }}>
+    <Animated.View style={[{ gap: spacing.xs }, shakeStyle]}>
       <View style={[styles.field, error ? { borderColor: colors.danger } : null]}>
         <Text variant="caption" color={colors.textMuted}>
           {label}
@@ -255,7 +263,7 @@ export function Field({
           {hint}
         </Text>
       ) : null}
-    </View>
+    </Animated.View>
   );
 }
 

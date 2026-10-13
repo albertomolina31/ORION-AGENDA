@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { Id, LocalTime, Money } from './common.js';
 import { BusinessCategory, BusinessStatus } from './identity.js';
+import { RequestId } from './common.js';
 
 export const ConfirmationMode = z.enum(['AUTOMATIC', 'MANUAL']);
 export type ConfirmationMode = z.infer<typeof ConfirmationMode>;
@@ -107,3 +108,50 @@ export const SchedulesResponse = z.object({
   ),
 });
 export type SchedulesResponse = z.infer<typeof SchedulesResponse>;
+
+export const SLOT_GRANULARITIES = [5, 10, 15, 20, 30, 60] as const;
+
+/** Cambio de política: crea una versión nueva; las citas existentes conservan la suya (L17). */
+export const UpdatePolicyRequest = z.object({
+  requestId: RequestId,
+  confirmationMode: ConfirmationMode,
+  slotGranularityMin: z.number().int().refine((n) => (SLOT_GRANULARITIES as readonly number[]).includes(n), 'Intervalo no válido'),
+  minLeadMin: z.number().int().min(0).max(7 * 24 * 60),
+  maxHorizonDays: z.number().int().min(1).max(365),
+  approvalWindowMin: z.number().int().min(5).max(24 * 60),
+  customerCancelUntilMin: z.number().int().min(0).max(7 * 24 * 60),
+  customerRescheduleUntilMin: z.number().int().min(0).max(7 * 24 * 60),
+  noShowGraceMin: z.number().int().min(0).max(120),
+  dryRun: z.boolean().default(false),
+});
+export type UpdatePolicyRequest = z.input<typeof UpdatePolicyRequest>;
+
+export const PolicyChange = z.object({ field: z.string(), label: z.string(), from: z.string(), to: z.string() });
+
+export const PolicyChangeResult = z.object({
+  applied: z.boolean(),
+  policy: BookingPolicy,
+  changes: z.array(PolicyChange),
+  /** Advertencias de consistencia entre parámetros (sección 24). */
+  warnings: z.array(z.string()),
+  /** Citas activas que seguirán usando su versión anterior. */
+  appointmentsKeepingPreviousVersion: z.number().int(),
+});
+export type PolicyChangeResult = z.infer<typeof PolicyChangeResult>;
+
+export const PolicyHistoryItem = z.object({
+  version: z.number().int(),
+  changedAt: z.iso.datetime({ offset: true }),
+  changedBy: z.string(),
+  policy: BookingPolicy,
+});
+export type PolicyHistoryItem = z.infer<typeof PolicyHistoryItem>;
+
+export const UpdateProfileRequest = z.object({
+  requestId: RequestId,
+  name: z.string().trim().min(2, 'Escribe al menos 2 caracteres').max(80),
+  category: BusinessCategory,
+  /** Pausar la recepción de reservas externas no suspende la cuenta (L02). */
+  acceptingExternalBookings: z.boolean(),
+});
+export type UpdateProfileRequest = z.input<typeof UpdateProfileRequest>;

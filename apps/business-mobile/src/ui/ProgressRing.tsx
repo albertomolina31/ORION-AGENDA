@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { View } from 'react-native';
-import Animated, { Easing, useAnimatedProps, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, ReduceMotion, useAnimatedProps, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withSequence, withSpring, withTiming, ZoomIn } from 'react-native-reanimated';
+import { Sparkle } from './Ori';
 import Svg, { Circle } from 'react-native-svg';
 import { Text } from './Text';
 import { colors } from './theme';
@@ -32,8 +33,27 @@ export function ProgressRing({
     p.value = reduced ? ratio : withTiming(ratio, { duration: 900, easing: Easing.out(Easing.cubic) });
   }, [ratio, reduced, p]);
   const props = useAnimatedProps(() => ({ strokeDashoffset: c * (1 - p.value) }));
+  // Al completar la meta: latido y destellos (como al terminar una lección).
+  const complete = total > 0 && value >= total;
+  const pulse = useSharedValue(1);
+  useEffect(() => {
+    if (complete && !reduced) pulse.value = withDelay(900, withSequence(withTiming(1.12, { duration: 160 }), withSpring(1, { damping: 6, stiffness: 220 })));
+  }, [complete, reduced, pulse]);
+  const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
   return (
-    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }} accessible accessibilityLabel={`${value} de ${total}${label ? ` ${label}` : ''}`}>
+    <Animated.View style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }, pulseStyle]} accessible accessibilityLabel={`${value} de ${total}${label ? ` ${label}` : ''}${complete ? ', meta completada' : ''}`}>
+      {complete
+        ? [
+            { top: -4, left: size / 2 - 8, d: 950 },
+            { top: size / 2 - 8, left: -6, d: 1050 },
+            { top: size / 2 - 8, right: -6, d: 1100 },
+            { bottom: -4, left: size / 2 - 8, d: 1000 },
+          ].map(({ d, ...pos }, i) => (
+            <Animated.View key={i} entering={ZoomIn.delay(d).springify().damping(8).reduceMotion(ReduceMotion.System)} style={{ position: 'absolute', ...pos }}>
+              <Sparkle size={16} />
+            </Animated.View>
+          ))
+        : null}
       <Svg width={size} height={size} style={{ position: 'absolute', transform: [{ rotate: '-90deg' }] }}>
         <Circle cx={size / 2} cy={size / 2} r={r} stroke={onDark ? 'rgba(255,255,255,0.14)' : colors.primarySoft} strokeWidth={stroke} fill="none" />
         <AnimatedCircle
@@ -54,6 +74,6 @@ export function ProgressRing({
           /{total}
         </Text>
       </Text>
-    </View>
+    </Animated.View>
   );
 }

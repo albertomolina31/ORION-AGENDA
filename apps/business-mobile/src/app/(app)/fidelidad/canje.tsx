@@ -61,7 +61,7 @@ export default function Redeem() {
       footer={
         reward && !done ? (
           <View style={{ gap: spacing.xs }}>
-            <Button
+            <Button requiresOnline
               label="Confirmar canje"
               trailingIcon={ArrowRight}
               loading={redeem.isPending}

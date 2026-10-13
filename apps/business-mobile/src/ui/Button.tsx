@@ -1,4 +1,5 @@
-import type { LucideIcon } from 'lucide-react-native';
+import { CloudOff, type LucideIcon } from 'lucide-react-native';
+import { useNetwork } from '@/lib/network';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { haptic } from './motion';
 import { Text } from './Text';
@@ -22,6 +23,7 @@ export function Button({
   disabled,
   compact,
   accessibilityHint,
+  requiresOnline,
 }: {
   label: string;
   onPress: () => void;
@@ -32,8 +34,17 @@ export function Button({
   disabled?: boolean;
   compact?: boolean;
   accessibilityHint?: string;
+  /** Acción transaccional: se desactiva sin conexión (nunca se encola ni se simula éxito). */
+  requiresOnline?: boolean;
 }) {
-  const isDisabled = !!(disabled || loading);
+  const { online } = useNetwork();
+  const offlineBlocked = !!requiresOnline && !online;
+  const isDisabled = !!(disabled || loading || offlineBlocked);
+  if (offlineBlocked) {
+    label = 'Sin conexión';
+    Icon = CloudOff;
+    Trailing = undefined;
+  }
   const v = isDisabled && variant === 'primary' ? disabledStyle : variants[variant];
   const flat = variant === 'ghost';
   return (

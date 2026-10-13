@@ -1,14 +1,28 @@
-import { Image, type ImageSourcePropType, View } from 'react-native';
-import Animated, { ReduceMotion, ZoomIn } from 'react-native-reanimated';
+import { Image, type ImageSourcePropType, Pressable, View } from 'react-native';
+import Animated, {
+  ReduceMotion,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
+  ZoomIn,
+} from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
-import { useFloat } from './motion';
+import { useEffect } from 'react';
+import { haptic } from './motion';
 import { colors } from './theme';
 
 /**
  * Ori, la mascota. Arte entregado por Alberto (13-oct-2026), una PNG por pose en
- * `assets/ori/ori-<pose>{,@2x,@3x}.png`. Se anima con Reanimated (flotar, aparecer).
- * Pendiente: versión Rive con parpadeo y estados (docs/ori-animacion-y-diseno.md),
- * manteniendo esta misma API.
+ * `assets/ori/ori-<pose>{,@2x,@3x}.png`.
+ *
+ * Animación tipo Duolingo con Reanimated (mientras llega la versión Rive, ver
+ * docs/ori-animacion-y-diseno.md): respira y flota en reposo, salta con "squash &
+ * stretch" al tocarlo y aparece con rebote al cambiar de pose. Con "Reducir
+ * movimiento" queda estático.
  */
 const POSES = {
   wave: require('../../assets/ori/ori-wave.png'),
@@ -48,27 +62,86 @@ export function Ori({
   float = true,
   enter = true,
   decorative = true,
+  interactive = true,
+  jump,
 }: {
   pose?: OriPose;
   size?: number;
-  /** Flotación suave en reposo. */
+  /** Respiración y flotación suaves en reposo. */
   float?: boolean;
-  /** Aparecer con rebote al montarse. */
+  /** Aparecer con rebote al montarse o al cambiar de pose. */
   enter?: boolean;
   /** Ilustración decorativa: se oculta a lectores de pantalla. */
   decorative?: boolean;
+  /** Tocar a Ori lo hace saltar (detalle lúdico, no ejecuta acciones). */
+  interactive?: boolean;
+  /** Cambiar este valor dispara un salto de celebración. */
+  jump?: unknown;
 }) {
-  const floatStyle = useFloat(size > 90 ? 5 : 3);
+  const reduced = useReducedMotion();
+  const y = useSharedValue(0);
+  const breathe = useSharedValue(1);
+  const sx = useSharedValue(1);
+  const sy = useSharedValue(1);
+  const hop = useSharedValue(0);
+
+  useEffect(() => {
+    if (reduced || !float) return;
+    const amp = size > 90 ? 5 : 3;
+    y.value = withRepeat(withSequence(withTiming(-amp, { duration: 1700 }), withTiming(0, { duration: 1700 })), -1);
+    breathe.value = withRepeat(withSequence(withTiming(1.025, { duration: 1300 }), withTiming(1, { duration: 1300 })), -1);
+  }, [reduced, float, size, y, breathe]);
+
+  const squashAndJump = () => {
+    if (reduced) return;
+    // Agacharse (squash), estirarse en el aire (stretch) y aterrizar con rebote.
+    sx.value = withSequence(withTiming(1.14, { duration: 90 }), withTiming(0.92, { duration: 140 }), withSpring(1, { damping: 7, stiffness: 240 }));
+    sy.value = withSequence(withTiming(0.86, { duration: 90 }), withTiming(1.1, { duration: 140 }), withSpring(1, { damping: 7, stiffness: 240 }));
+    hop.value = withSequence(withTiming(0, { duration: 90 }), withTiming(-size * 0.18, { duration: 180 }), withSpring(0, { damping: 9, stiffness: 220 }));
+  };
+
+  useEffect(() => {
+    if (jump !== undefined) squashAndJump();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jump]);
+
+  const body = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: y.value + hop.value },
+      { scaleX: sx.value * breathe.value },
+      { scaleY: sy.value * (2 - breathe.value) },
+    ],
+  }));
+
+  const image = (
+    <Animated.View key={pose} entering={enter ? ZoomIn.springify().damping(11).reduceMotion(ReduceMotion.System) : undefined}>
+      <Image source={POSES[pose]} style={{ width: size, height: size }} resizeMode="contain" />
+    </Animated.View>
+  );
+
   return (
-    <Animated.View
-      entering={enter ? ZoomIn.springify().damping(12).reduceMotion(ReduceMotion.System) : undefined}
-      style={[{ width: size, height: size }, float ? floatStyle : null]}
+    <View
+      style={{ width: size, height: size }}
       accessible={!decorative}
       accessibilityLabel={decorative ? undefined : LABELS[pose]}
       importantForAccessibility={decorative ? 'no-hide-descendants' : 'yes'}
     >
-      <Image source={POSES[pose]} style={{ width: size, height: size }} resizeMode="contain" />
-    </Animated.View>
+      <Animated.View style={[{ width: size, height: size, transformOrigin: 'bottom' }, body]}>
+        {interactive ? (
+          <Pressable
+            onPress={() => {
+              haptic.tap();
+              squashAndJump();
+            }}
+            accessible={false}
+          >
+            {image}
+          </Pressable>
+        ) : (
+          image
+        )}
+      </Animated.View>
+    </View>
   );
 }
 

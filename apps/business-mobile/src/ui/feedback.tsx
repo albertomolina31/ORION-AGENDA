@@ -19,7 +19,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from './Button';
-import { haptic } from './motion';
+import { haptic, useShake } from './motion';
 import { Ori } from './Ori';
 import { Text } from './Text';
 import { colors, radius, shadow, spacing } from './theme';
@@ -100,7 +100,13 @@ export function useFeedback(): FeedbackValue {
 function Toast({ message, tone }: { message: string; tone: ToastTone }) {
   const insets = useSafeAreaInsets();
   const Icon = tone === 'success' ? CircleCheck : CircleAlert;
+  const { style: shakeStyle, shake } = useShake();
+  useEffect(() => {
+    if (tone === 'error') setTimeout(shake, 250);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
+    <Animated.View style={[{ position: 'absolute', left: 0, right: 0, top: 0, zIndex: 1000 }, shakeStyle]} pointerEvents="none">
     <Animated.View
       entering={FadeInUp.springify().damping(16).reduceMotion(ReduceMotion.System)}
       exiting={FadeOutUp.duration(200)}
@@ -109,57 +115,86 @@ function Toast({ message, tone }: { message: string; tone: ToastTone }) {
       accessibilityRole="alert"
       pointerEvents="none"
     >
-      <Icon size={20} color={tone === 'success' ? '#7FE0A6' : '#FFB4BE'} />
+      <Animated.View entering={ZoomIn.delay(120).springify().damping(9).reduceMotion(ReduceMotion.System)}>
+        <Icon size={20} color={tone === 'success' ? '#7FE0A6' : '#FFB4BE'} />
+      </Animated.View>
       <Text variant="bodyStrong" color={colors.textOnNight} style={{ flexShrink: 1 }}>
         {message}
       </Text>
+    </Animated.View>
     </Animated.View>
   );
 }
 
 const CONFETTI_COLORS = [colors.accent, '#F7C35A', colors.primary, '#8C7BEA', '#7FE0A6'];
 
-function ConfettiPiece({ i, width, height }: { i: number; width: number; height: number }) {
+/** Pieza de confeti que sale disparada desde el centro y cae con gravedad. */
+function ConfettiPiece({ i, cx, cy }: { i: number; cx: number; cy: number }) {
   const seed = (i * 9301 + 49297) % 233280;
-  const rnd = (n: number) => ((seed * (n + 1)) % 1000) / 1000;
-  const x0 = rnd(1) * width;
-  const drift = (rnd(2) - 0.5) * 120;
-  const delay = rnd(3) * 250;
+  const rnd = (n: number) => ((seed * (n + 3)) % 997) / 997;
+  const angle = (i / 36) * Math.PI * 2 + rnd(1) * 0.5;
+  const speed = 160 + rnd(2) * 200;
+  const spin = (rnd(3) > 0.5 ? 1 : -1) * (360 + rnd(4) * 540);
+  const size = 6 + rnd(5) * 7;
+  const round = rnd(6) > 0.6;
   const p = useSharedValue(0);
   useEffect(() => {
-    p.value = withDelay(delay, withTiming(1, { duration: 1500 + rnd(4) * 700, easing: Easing.out(Easing.quad) }));
+    p.value = withTiming(1, { duration: 1300 + rnd(7) * 500, easing: Easing.out(Easing.quad) });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const style = useAnimatedStyle(() => ({
-    opacity: 1 - p.value * 0.9,
-    transform: [{ translateX: x0 + drift * p.value }, { translateY: -20 + p.value * height * 0.75 }, { rotate: `${p.value * 540 * (rnd(5) > 0.5 ? 1 : -1)}deg` }],
-  }));
-  return <Animated.View style={[styles.confetti, { backgroundColor: CONFETTI_COLORS[i % CONFETTI_COLORS.length], width: 6 + rnd(6) * 6 }, style]} />;
+  const style = useAnimatedStyle(() => {
+    const t = p.value;
+    return {
+      opacity: t < 0.75 ? 1 : 1 - (t - 0.75) * 4,
+      transform: [
+        { translateX: cx + Math.cos(angle) * speed * t },
+        { translateY: cy + Math.sin(angle) * speed * t + 420 * t * t },
+        { rotate: `${spin * t}deg` },
+        { scale: t < 0.1 ? t * 10 : 1 },
+      ],
+    };
+  });
+  return (
+    <Animated.View
+      style={[
+        styles.confetti,
+        { backgroundColor: CONFETTI_COLORS[i % CONFETTI_COLORS.length], width: size, height: round ? size : size * 1.6, borderRadius: round ? size / 2 : 2 },
+        style,
+      ]}
+    />
+  );
 }
 
-/** Celebración breve con Ori y confeti (sin confeti si se reduce el movimiento). */
+/** Celebración tipo Duolingo: Ori salta dos veces, confeti en explosión y título con rebote. */
 function Celebration({ title, body, onDone }: { title: string; body?: string; onDone: () => void }) {
   const { width, height } = useWindowDimensions();
   const reduced = useReducedMotion();
+  const [jumps, setJumps] = useState(0);
   useEffect(() => {
-    const t = setTimeout(onDone, 2400);
-    return () => clearTimeout(t);
+    const a = setTimeout(() => setJumps(1), 180);
+    const b = setTimeout(() => setJumps(2), 720);
+    const t = setTimeout(onDone, 2600);
+    return () => [a, b, t].forEach(clearTimeout);
   }, [onDone]);
   return (
     <Animated.View entering={FadeIn.duration(150)} exiting={FadeOut.duration(250)} style={styles.partyBackdrop}>
       <Pressable style={StyleSheet.absoluteFill} onPress={onDone} accessibilityLabel="Cerrar celebración" />
-      {!reduced ? Array.from({ length: 28 }).map((_, i) => <ConfettiPiece key={i} i={i} width={width} height={height} />) : null}
       <Animated.View entering={ZoomIn.springify().damping(11).reduceMotion(ReduceMotion.System)} style={styles.partyCard} accessibilityRole="alert">
-        <Ori pose="celebrate" size={128} enter={false} />
-        <Text variant="title" align="center">
-          {title}
-        </Text>
-        {body ? (
-          <Text variant="body" color={colors.textMuted} align="center">
-            {body}
+        <Ori pose="celebrate" size={132} enter={false} float={false} interactive={false} jump={jumps || undefined} />
+        <Animated.View entering={ZoomIn.delay(160).springify().damping(8).reduceMotion(ReduceMotion.System)}>
+          <Text variant="title" align="center">
+            {title}
           </Text>
+        </Animated.View>
+        {body ? (
+          <Animated.View entering={FadeInUp.delay(260).duration(260).reduceMotion(ReduceMotion.System)}>
+            <Text variant="body" color={colors.textMuted} align="center">
+              {body}
+            </Text>
+          </Animated.View>
         ) : null}
       </Animated.View>
+      {!reduced ? Array.from({ length: 36 }).map((_, i) => <ConfettiPiece key={i} i={i} cx={width / 2} cy={height / 2 - 80} />) : null}
     </Animated.View>
   );
 }
@@ -207,6 +242,7 @@ function ConfirmSheet({ options, onClose }: { options: (ConfirmOptions & { resol
             ) : null}
             <View style={{ gap: spacing.sm, marginTop: spacing.sm }}>
               <Button
+                requiresOnline
                 label={options.confirmLabel}
                 variant={options.destructive ? 'destructive' : 'primary'}
                 disabled={needsReason && !reason.trim()}

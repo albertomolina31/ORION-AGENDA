@@ -124,6 +124,13 @@ export class MemoryDatabase implements UnitOfWork {
         services: async (bid) => clone(s().services.filter((x) => x.businessId === bid)),
         professionalServices: async (bid) => clone(s().professionalServices.filter((x) => x.businessId === bid)),
       },
+      businessWriter: {
+        update: async (b) => {
+          const i = s().businesses.findIndex((x) => x.id === b.id);
+          if (i < 0) throw new DomainError('NOT_FOUND', 'Negocio no encontrado.');
+          s().businesses[i] = clone(b);
+        },
+      },
       catalogWriter: {
         upsertService: async (svc) => {
           const i = s().services.findIndex((x) => x.businessId === svc.businessId && x.id === svc.id);

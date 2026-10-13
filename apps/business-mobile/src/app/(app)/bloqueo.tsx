@@ -65,7 +65,7 @@ export default function NewBlock() {
     <Screen
       header={<StackHeader title="Bloquear horario" subtitle={m.businessName} />}
       footer={
-        <Button
+        <Button requiresOnline
           label="Bloquear"
           icon={CalendarX}
           disabled={!pro || !date || end <= start}

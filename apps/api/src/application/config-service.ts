@@ -1,5 +1,11 @@
 import type {
   Block,
+  BookingPolicy,
+  BusinessProfile,
+  PolicyChangeResult,
+  PolicyHistoryItem,
+  UpdatePolicyRequest,
+  UpdateProfileRequest,
   CreateBlockRequest,
   ExceptionRequest,
   Professional as ProfessionalDto,
@@ -11,6 +17,8 @@ import type {
   WeeklyHoursRequest,
 } from '@orion/contracts';
 import {
+  UpdatePolicyRequest as UpdatePolicySchema,
+  UpdateProfileRequest as UpdateProfileSchema,
   CreateBlockRequest as CreateBlockSchema,
   ExceptionRequest as ExceptionSchema,
   SaveProfessionalRequest as SaveProfessionalSchema,
@@ -399,4 +407,104 @@ function validateRanges(ranges: Array<{ start: string; end: string }>, zone: str
   }
   // Comprueba que las horas existan en la zona (luxon valida el formato).
   localIntervals('2026-01-05', sorted, zone);
+}
+
+// ───────────────────────── Política y perfil (UI15, L02, L17) ─────────────────────────
+
+const POLICY_LABELS: Record<string, { label: string; fmt: (v: number | string) => string }> = {
+  confirmationMode: { label: 'Confirmación de solicitudes externas', fmt: (v) => (v === 'MANUAL' ? 'Manual' : 'Automática') },
+  slotGranularityMin: { label: 'Intervalo de opciones', fmt: (v) => `${v} min` },
+  minLeadMin: { label: 'Anticipación mínima', fmt: (v) => durationLabel(Number(v)) },
+  maxHorizonDays: { label: 'Horizonte máximo', fmt: (v) => `${v} días` },
+  approvalWindowMin: { label: 'Plazo para aprobar', fmt: (v) => durationLabel(Number(v)) },
+  customerCancelUntilMin: { label: 'Cancelación del cliente', fmt: (v) => `hasta ${durationLabel(Number(v))} antes` },
+  customerRescheduleUntilMin: { label: 'Reprogramación del cliente', fmt: (v) => `hasta ${durationLabel(Number(v))} antes` },
+  noShowGraceMin: { label: 'Margen para "No asistió"', fmt: (v) => `${v} min` },
+};
+
+export function durationLabel(min: number): string {
+  if (min === 0) return '0 min';
+  if (min % 1440 === 0) return `${min / 1440} ${min === 1440 ? 'día' : 'días'}`;
+  if (min % 60 === 0) return `${min / 60} h`;
+  return min > 60 ? `${Math.floor(min / 60)} h ${min % 60} min` : `${min} min`;
+}
+
+/** Advertencias de consistencia entre parámetros (sección 24). No bloquean el guardado. */
+export function policyWarnings(p: BookingPolicy): string[] {
+  const w: string[] = [];
+  if (p.minLeadMin < p.customerCancelUntilMin) {
+    w.push(`Se puede reservar con ${durationLabel(p.minLeadMin)} de anticipación, pero cancelar exige ${durationLabel(p.customerCancelUntilMin)}: quien reserve tarde ya no podrá cancelar por su cuenta. Avísalo al confirmar.`);
+  }
+  if (p.minLeadMin < p.customerRescheduleUntilMin) {
+    w.push('Algunas reservas tardías no podrán reprogramarse por autoservicio.');
+  }
+  if (p.confirmationMode === 'MANUAL' && p.approvalWindowMin > p.minLeadMin && p.minLeadMin > 0) {
+    w.push(`El plazo para aprobar (${durationLabel(p.approvalWindowMin)}) es mayor que la anticipación mínima: una solicitud podría vencer después de la hora de la cita.`);
+  }
+  if (p.maxHorizonDays > 120) w.push('Un horizonte largo abre la agenda con meses de anticipación; asegúrate de que los horarios estén al día.');
+  return w;
+}
+
+
+export class BusinessSettingsService {
+  constructor(
+    private readonly repos: Repositories,
+    private readonly clock: Clock,
+    private readonly idempotency: IdempotencyService,
+    private readonly profile: (actor: ActorContext) => Promise<BusinessProfile>,
+  ) {}
+
+  private async business(id: string): Promise<Business> {
+    const b = await this.repos.businesses.get(id);
+    if (!b) throw new DomainError('NOT_FOUND', 'Negocio no encontrado.');
+    return b;
+  }
+
+  async updatePolicy(actor: ActorContext, raw: UpdatePolicyRequest): Promise<PolicyChangeResult> {
+    requirePermission(actor, 'business.configure');
+    const req = UpdatePolicySchema.parse(raw);
+    const { requestId, dryRun, ...fields } = req;
+    const run = async (): Promise<PolicyChangeResult> => {
+      const b = await this.business(actor.businessId);
+      const current = b.policy;
+      const next: BookingPolicy = { ...fields, version: current.version + 1 };
+      const changes = (Object.keys(POLICY_LABELS) as Array<keyof typeof fields>)
+        .filter((k) => current[k] !== next[k])
+        .map((k) => ({ field: k, label: POLICY_LABELS[k]!.label, from: POLICY_LABELS[k]!.fmt(current[k]), to: POLICY_LABELS[k]!.fmt(next[k]) }));
+      const now = this.clock.now().getTime();
+      const keeping = (await this.repos.appointments.listAll(b.id)).filter((a) => ACTIVE_STATUSES.has(a.status) && a.endsAt.getTime() > now).length;
+      const result = { policy: changes.length ? next : current, changes, warnings: policyWarnings(next), appointmentsKeepingPreviousVersion: changes.length ? keeping : 0 };
+      if (dryRun) return { applied: false, ...result };
+      if (changes.length === 0) throw new DomainError('VALIDATION_ERROR', 'No hay cambios que guardar.');
+      await this.repos.businessWriter.update({
+        ...b,
+        policy: next,
+        policyHistory: [...b.policyHistory, { policy: next, changedAt: this.clock.now(), changedBy: actor.userName }],
+      });
+      return { applied: true, ...result };
+    };
+    if (dryRun) return run();
+    return this.idempotency.execute(actor, 'business.policy', requestId, fields, run);
+  }
+
+  async policyHistory(actor: ActorContext): Promise<PolicyHistoryItem[]> {
+    requirePermission(actor, 'business.configure');
+    const b = await this.business(actor.businessId);
+    return [...b.policyHistory]
+      .reverse()
+      .map((h) => ({ version: h.policy.version, changedAt: toZonedIso(h.changedAt, b.timezone), changedBy: h.changedBy, policy: h.policy }));
+  }
+
+  async updateProfile(actor: ActorContext, raw: UpdateProfileRequest): Promise<BusinessProfile> {
+    requirePermission(actor, 'business.configure');
+    const req = UpdateProfileSchema.parse(raw);
+    const { requestId, ...payload } = req;
+    await this.idempotency.execute(actor, 'business.profile', requestId, payload, async () => {
+      const b = await this.business(actor.businessId);
+      // La zona horaria y la moneda no se editan en el piloto: cambiarlas reinterpretaría citas e importes.
+      await this.repos.businessWriter.update({ ...b, name: req.name, category: req.category, acceptingExternalBookings: req.acceptingExternalBookings });
+      return { ok: true };
+    });
+    return this.profile(actor);
+  }
 }

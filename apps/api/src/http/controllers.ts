@@ -14,6 +14,8 @@ import {
   SaveProfessionalRequest,
   SaveServiceRequest,
   SimpleCommand,
+  UpdatePolicyRequest,
+  UpdateProfileRequest,
   WeeklyHoursRequest,
   CustomerListQuery,
   DevLoginRequest,
@@ -124,6 +126,24 @@ export class BusinessController {
   @Get('integrations')
   async integrations(@Actor() a: ActorContext) {
     return (await this.c.business.profile(a)).integrations;
+  }
+
+  // ── Perfil y reglas de reserva (UI15) ──
+
+  @Patch('profile')
+  updateProfile(@Actor() a: ActorContext, @Body(new ZodPipe(UpdateProfileRequest)) body: z.infer<typeof UpdateProfileRequest>) {
+    return this.c.settings.updateProfile(a, body);
+  }
+
+  @Post('policy')
+  @HttpCode(200)
+  updatePolicy(@Actor() a: ActorContext, @Body(new ZodPipe(UpdatePolicyRequest)) body: z.infer<typeof UpdatePolicyRequest>) {
+    return this.c.settings.updatePolicy(a, body);
+  }
+
+  @Get('policy/history')
+  policyHistory(@Actor() a: ActorContext) {
+    return this.c.settings.policyHistory(a);
   }
 
   // ── Configuración (P17–P19) ──

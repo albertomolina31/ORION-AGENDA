@@ -35,10 +35,18 @@ Pantallas adicionales del inventario: detalle de cita y acciones (UI07), nueva c
 - **UI18 Notificaciones:** bandeja derivada del outbox (solicitudes y reservas por WhatsApp, vencimientos, cancelaciones, reprogramaciones), sin auto-avisos del propio actor, filtrada por permisos; contador en la campana.
 - Permisos: catálogo `catalog.manage`; alta/baja de profesionales `team.manage` (solo dueño por defecto); horarios y bloqueos `schedules.manage`.
 
+## Iteración 13-oct-2026 (noche)
+
+- **UI15 Perfil y reglas editables:** nombre, categoría y "acepta reservas externas" (zona horaria y moneda no se editan desde la app). Reglas de reserva (confirmación, granularidad, anticipación mínima, horizonte, ventana de aprobación, límites de cancelación/reprogramación del cliente, margen de "No asistió") con **revisión previa** (`dryRun`: cambios, avisos y cuántas citas conservan la versión anterior) y confirmación explícita. Solo `business.configure`.
+- **L17 versionado:** cada cambio crea una versión nueva; las citas existentes guardan `policyVersion` en su snapshot y se evalúan con la versión con la que se crearon (`policyFor`). Historial de versiones visible.
+- **P42 Modo sin conexión:** caché persistida en el dispositivo (24 h, separada por usuario y negocio, se borra al cerrar sesión o cambiar de negocio), sesión utilizable sin red, aviso con la hora de los datos mostrados y acciones transaccionales bloqueadas ("Sin conexión"). Error `OFFLINE` (no se envió nada) distinto de `NETWORK`/`TIMEOUT` (resultado incierto: se consulta `/operations/:requestId`). Distingue "sin internet" de "servidor inalcanzable". Sin pings a terceros.
+- **Animaciones tipo Duolingo:** Ori con squash & stretch al tocarlo y saltos de celebración, confeti radial, destellos al completar el anillo del día, sacudida en errores de formulario y toasts, chips con rebote. Todo respeta "Reducir movimiento".
+- **Widgets:** plan en [`widgets-plan.md`](widgets-plan.md) (instantánea escrita por la app, sin tokens en fase 1, iniciales por defecto).
+
 ## Siguiente bloque sugerido
 
 1. Retomar D09: esquema PostgreSQL, migraciones y pruebas de concurrencia reales (P09, P22).
 2. Decidir autenticación y reemplazar el login simulado (P14).
-3. Reglas de reserva editables (UI15) con versionado de políticas (L17).
+3. Widgets W1–W3 (contrato, preferencia de privacidad y puente) junto con el primer development build.
 4. Development build en iPhone/Android físicos (P12).
 5. Entregar a Carlos y Sergio `docs/openapi.json` y los fixtures (P06).

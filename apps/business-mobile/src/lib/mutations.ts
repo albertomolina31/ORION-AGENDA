@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRef } from 'react';
 import { ApiError } from './api-client';
 import { endpoints } from './endpoints';
+import { isOnlineNow } from './network';
 import { newRequestId } from './request-id';
 
 /**
@@ -14,6 +15,8 @@ export function useIdempotentMutation<TInput, TOutput>(fn: (input: TInput, reque
   const key = useRef<string | null>(null);
   const mutation = useMutation<TOutput, ApiError, TInput>({
     mutationFn: async (input) => {
+      // Sin conexión no se intenta: nada se guarda ni se anuncia como exitoso (P42).
+      if (!isOnlineNow()) throw new ApiError('OFFLINE', 'Sin conexión: esta acción necesita internet. No se guardó nada.', null);
       key.current ??= newRequestId();
       const requestId = key.current;
       try {

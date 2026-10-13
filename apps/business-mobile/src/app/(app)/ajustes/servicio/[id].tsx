@@ -82,7 +82,7 @@ export default function ServiceEditor() {
   return (
     <Screen
       header={<StackHeader title={isNew ? 'Nuevo servicio' : 'Editar servicio'} subtitle={m.businessName} />}
-      footer={<Button label="Guardar" icon={Check} loading={save.isPending} onPress={() => submit(existing?.active ?? true)} />}
+      footer={<Button requiresOnline label="Guardar" icon={Check} loading={save.isPending} onPress={() => submit(existing?.active ?? true)} />}
     >
       <Field label="Nombre" value={name} onChangeText={setName} error={errors.name?.[0]} maxLength={60} />
       <Card>
@@ -126,6 +126,7 @@ export default function ServiceEditor() {
       {!isNew && existing ? (
         existing.active ? (
           <Button
+            requiresOnline
             label="Archivar servicio"
             icon={Archive}
             variant="destructive"
@@ -140,7 +141,7 @@ export default function ServiceEditor() {
             }}
           />
         ) : (
-          <Button label="Reactivar servicio" icon={ArchiveRestore} variant="outline" onPress={() => submit(true)} />
+          <Button requiresOnline label="Reactivar servicio" icon={ArchiveRestore} variant="outline" onPress={() => submit(true)} />
         )
       ) : null}
       <Text variant="caption" color={colors.textMuted}>

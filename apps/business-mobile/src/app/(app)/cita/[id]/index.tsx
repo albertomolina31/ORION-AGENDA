@@ -149,14 +149,14 @@ export default function AppointmentDetail() {
 
 
       <View style={{ gap: spacing.md }}>
-        {can('approve') ? <Button label="Aprobar" icon={Check} onPress={() => run('approve')} loading={mutation.isPending} /> : null}
-        {can('reject') ? <Button label="Rechazar" icon={X} variant="destructive" onPress={() => run('reject')} disabled={mutation.isPending} /> : null}
-        {can('complete') ? <Button label="Marcar como completada" icon={CircleCheck} onPress={() => run('complete')} loading={mutation.isPending} /> : null}
+        {can('approve') ? <Button requiresOnline label="Aprobar" icon={Check} onPress={() => run('approve')} loading={mutation.isPending} /> : null}
+        {can('reject') ? <Button requiresOnline label="Rechazar" icon={X} variant="destructive" onPress={() => run('reject')} disabled={mutation.isPending} /> : null}
+        {can('complete') ? <Button requiresOnline label="Marcar como completada" icon={CircleCheck} onPress={() => run('complete')} loading={mutation.isPending} /> : null}
         {can('reschedule') ? (
-          <Button label="Reprogramar" icon={CalendarClock} variant="outline" onPress={() => router.push(`/cita/${a.id}/reprogramar`)} disabled={mutation.isPending} />
+          <Button requiresOnline label="Reprogramar" icon={CalendarClock} variant="outline" onPress={() => router.push(`/cita/${a.id}/reprogramar`)} disabled={mutation.isPending} />
         ) : null}
-        {can('no-show') ? <Button label="No asistió" icon={UserX} variant="outline" onPress={() => run('no-show')} disabled={mutation.isPending} /> : null}
-        {can('cancel') ? <Button label="Cancelar cita" icon={Ban} variant="destructive" onPress={() => run('cancel')} disabled={mutation.isPending} /> : null}
+        {can('no-show') ? <Button requiresOnline label="No asistió" icon={UserX} variant="outline" onPress={() => run('no-show')} disabled={mutation.isPending} /> : null}
+        {can('cancel') ? <Button requiresOnline label="Cancelar cita" icon={Ban} variant="destructive" onPress={() => run('cancel')} disabled={mutation.isPending} /> : null}
         {a.allowedActions.length === 0 ? (
           <Text variant="caption" color={colors.textMuted} align="center">
             {a.status === 'CONFIRMED' || a.status === 'PENDING_APPROVAL'

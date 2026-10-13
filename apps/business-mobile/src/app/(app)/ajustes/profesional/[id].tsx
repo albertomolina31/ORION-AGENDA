@@ -108,7 +108,7 @@ export default function ProfessionalEditor() {
   return (
     <Screen
       header={<StackHeader title={isNew ? 'Nuevo profesional' : 'Editar profesional'} subtitle={m.businessName} />}
-      footer={<Button label="Guardar" icon={Check} loading={save.isPending} onPress={submit} />}
+      footer={<Button requiresOnline label="Guardar" icon={Check} loading={save.isPending} onPress={submit} />}
       onRefresh={blocking ? () => future.refetch() : undefined}
       refreshing={future.isRefetching}
     >
@@ -145,9 +145,9 @@ export default function ProfessionalEditor() {
 
       {!isNew && existing && m.permissions.includes('team.manage') ? (
         existing.active ? (
-          <Button label="Desactivar profesional" icon={UserX} variant="destructive" loading={status.isPending} onPress={() => toggleActive(false)} />
+          <Button requiresOnline label="Desactivar profesional" icon={UserX} variant="destructive" loading={status.isPending} onPress={() => toggleActive(false)} />
         ) : (
-          <Button label="Reactivar profesional" icon={UserCheck} variant="outline" loading={status.isPending} onPress={() => toggleActive(true)} />
+          <Button requiresOnline label="Reactivar profesional" icon={UserCheck} variant="outline" loading={status.isPending} onPress={() => toggleActive(true)} />
         )
       ) : null}
     </Screen>

@@ -93,7 +93,7 @@ export default function NewAppointment() {
         ) : step === 3 ? (
           <Button label="Revisar resumen" trailingIcon={ArrowRight} disabled={!startsAt} onPress={() => setStep(4)} />
         ) : step === 4 ? (
-          <Button label="Confirmar cita" icon={Check} loading={create.isPending} onPress={confirm} />
+          <Button requiresOnline label="Confirmar cita" icon={Check} loading={create.isPending} onPress={confirm} />
         ) : undefined
       }
     >

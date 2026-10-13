@@ -59,7 +59,7 @@ export default function Reschedule() {
     <Screen
       header={<StackHeader title="Reprogramar" subtitle={`${a.customer.name} · ${a.service.name}`} />}
       footer={
-        <Button
+        <Button requiresOnline
           label="Confirmar cambio"
           icon={Check}
           disabled={!startsAt || unchanged}

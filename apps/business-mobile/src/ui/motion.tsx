@@ -136,3 +136,41 @@ export function useFloat(amplitude = 5, duration = 1800) {
   }, [y, reduced, amplitude, duration]);
   return useAnimatedStyle(() => ({ transform: [{ translateY: y.value }] }));
 }
+
+/**
+ * Sacudida horizontal (como una respuesta incorrecta en Duolingo) para errores de
+ * validación. Con movimiento reducido solo vibra.
+ */
+export function useShake() {
+  const x = useSharedValue(0);
+  const reduced = useReducedMotion();
+  const style = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
+  const shake = () => {
+    haptic.warning();
+    if (reduced) return;
+    x.value = withSequence(
+      withTiming(-8, { duration: 50 }),
+      withTiming(8, { duration: 60 }),
+      withTiming(-6, { duration: 60 }),
+      withTiming(6, { duration: 60 }),
+      withTiming(0, { duration: 50 }),
+    );
+  };
+  return { style, shake };
+}
+
+/** Rebote de "pop" (escala) que se dispara cuando cambia `trigger`. */
+export function usePop(trigger: unknown, to = 1.18) {
+  const s = useSharedValue(1);
+  const reduced = useReducedMotion();
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    if (reduced) return;
+    s.value = withSequence(withTiming(to, { duration: 110 }), withSpring(1, { damping: 8, stiffness: 260 }));
+  }, [trigger, reduced, s, to]);
+  return useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
+}

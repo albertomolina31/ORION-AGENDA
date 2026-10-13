@@ -28,7 +28,10 @@ export interface Business {
   currency: string;
   status: 'DRAFT' | 'ACTIVE' | 'SUSPENDED';
   acceptingExternalBookings: boolean;
+  /** Política vigente (la última de `policyHistory`). */
   policy: BookingPolicy;
+  /** Todas las versiones; las citas guardan la versión con la que se reservaron. */
+  policyHistory: Array<{ policy: BookingPolicy; changedAt: Date; changedBy: string }>;
   integrations: {
     whatsapp: 'CONNECTED' | 'NOT_CONNECTED' | 'ERROR';
     appleWallet: 'CONNECTED' | 'NOT_CONNECTED' | 'ERROR';

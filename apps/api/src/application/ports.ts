@@ -36,6 +36,10 @@ export interface BusinessReader {
   get(id: string): Promise<Business | undefined>;
 }
 
+export interface BusinessWriter {
+  update(b: Business): Promise<void>;
+}
+
 export interface CatalogReader {
   professionals(businessId: string): Promise<Professional[]>;
   services(businessId: string): Promise<Service[]>;
@@ -117,6 +121,7 @@ export interface Repositories {
   users: UserReader;
   memberships: MembershipReader;
   businesses: BusinessReader;
+  businessWriter: BusinessWriter;
   catalog: CatalogReader;
   catalogWriter: CatalogWriter;
   schedules: ScheduleReader;

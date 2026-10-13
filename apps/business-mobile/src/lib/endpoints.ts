@@ -1,4 +1,8 @@
 import type {
+  PolicyChangeResult,
+  PolicyHistoryItem,
+  UpdatePolicyRequest,
+  UpdateProfileRequest,
   Block,
   CreateBlockRequest,
   ExceptionRequest,
@@ -80,6 +84,9 @@ export const endpoints = {
   redeem: (bid: string, body: { requestId: string; rewardId: string; appointmentId: string | null }) =>
     api<RedemptionResult>('POST', `${b(bid)}/loyalty/redemptions`, { body }),
 
+  updateProfile: (bid: string, body: UpdateProfileRequest) => api<BusinessProfile>('PATCH', `${b(bid)}/profile`, { body }),
+  updatePolicy: (bid: string, body: UpdatePolicyRequest) => api<PolicyChangeResult>('POST', `${b(bid)}/policy`, { body }),
+  policyHistory: (bid: string) => api<PolicyHistoryItem[]>('GET', `${b(bid)}/policy/history`),
   saveService: (bid: string, id: string | null, body: SaveServiceRequest) =>
     id ? api<Service>('PATCH', `${b(bid)}/services/${id}`, { body }) : api<Service>('POST', `${b(bid)}/services`, { body }),
   saveProfessional: (bid: string, id: string | null, body: SaveProfessionalRequest) =>

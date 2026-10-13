@@ -1,7 +1,9 @@
 import type { ErrorCode, ErrorEnvelope } from '@orion/contracts';
 import { API_URL } from './config';
+import { reportServerReachable } from './network';
 
-export type ClientErrorCode = ErrorCode | 'NETWORK' | 'TIMEOUT';
+/** OFFLINE = no se envió nada (sin conexión); NETWORK/TIMEOUT = se envió y el resultado es incierto. */
+export type ClientErrorCode = ErrorCode | 'NETWORK' | 'TIMEOUT' | 'OFFLINE';
 
 export class ApiError extends Error {
   constructor(
@@ -61,6 +63,7 @@ export async function api<T>(
     });
   } catch (err) {
     const aborted = (err as Error).name === 'AbortError';
+    reportServerReachable(false);
     throw new ApiError(
       aborted ? 'TIMEOUT' : 'NETWORK',
       aborted ? 'La respuesta tardó demasiado.' : 'No hay conexión con el servidor.',
@@ -69,6 +72,7 @@ export async function api<T>(
   } finally {
     clearTimeout(timer);
   }
+  reportServerReachable(true);
   if (res.status === 204) return undefined as T;
   const json = (await res.json().catch(() => null)) as unknown;
   if (!res.ok) {

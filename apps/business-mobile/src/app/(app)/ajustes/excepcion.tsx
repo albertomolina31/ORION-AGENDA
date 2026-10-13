@@ -77,7 +77,7 @@ export default function NewException() {
   };
 
   return (
-    <Screen header={<StackHeader title="Nueva excepción" subtitle={m.businessName} />} footer={<Button label="Guardar excepción" icon={Check} loading={checking || save.isPending} disabled={!date || (mode === 'special' && end <= start)} onPress={submit} />}>
+    <Screen header={<StackHeader title="Nueva excepción" subtitle={m.businessName} />} footer={<Button requiresOnline label="Guardar excepción" icon={Check} loading={checking || save.isPending} disabled={!date || (mode === 'special' && end <= start)} onPress={submit} />}>
       <View style={{ gap: spacing.sm }}>
         <Text variant="subheading">¿Para quién?</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>

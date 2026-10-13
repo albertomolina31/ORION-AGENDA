@@ -2,7 +2,8 @@ import type { LucideIcon } from 'lucide-react-native';
 import { CalendarDays, House, Megaphone, Store, Users } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { haptic } from './motion';
+import Animated from 'react-native-reanimated';
+import { haptic, usePop } from './motion';
 import { Text } from './Text';
 import { colors, radius, spacing } from './theme';
 
@@ -43,15 +44,24 @@ export function TabBar({ state, descriptors, navigation }: TabBarProps) {
             }}
             style={styles.item}
           >
-            <View style={[styles.pill, focused && styles.pillActive]}>
-              <Icon size={22} color={focused ? colors.primary : colors.textSubtle} strokeWidth={focused ? 2.4 : 2} />
-            </View>
+            <TabIcon Icon={Icon} focused={focused} />
             <Text variant="micro" color={focused ? colors.primary : colors.textSubtle} numberOfLines={1}>
               {label}
             </Text>
           </Pressable>
         );
       })}
+    </View>
+  );
+}
+
+function TabIcon({ Icon, focused }: { Icon: LucideIcon; focused: boolean }) {
+  const pop = usePop(focused, 1.22);
+  return (
+    <View style={[styles.pill, focused && styles.pillActive]}>
+      <Animated.View style={pop}>
+        <Icon size={22} color={focused ? colors.primary : colors.textSubtle} strokeWidth={focused ? 2.4 : 2} />
+      </Animated.View>
     </View>
   );
 }

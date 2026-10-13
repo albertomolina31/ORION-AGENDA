@@ -24,6 +24,11 @@ import type { Repositories, UnitOfWork } from './ports.js';
 import { initials } from './presentation.js';
 
 const MAX_AGENDA_DAYS = 31;
+
+/** Política con la que se reservó la cita (L17); si no existe, la vigente. */
+export function policyFor(business: Business, version: number) {
+  return business.policyHistory.find((h) => h.policy.version === version)?.policy ?? business.policy;
+}
 const SYSTEM_ACTOR = { id: 'system', name: 'Sistema' };
 
 interface Lookups {
@@ -262,7 +267,7 @@ export class AppointmentService {
           currentStatus: appt.status,
         });
       }
-      const outcome = decideTransition(appt, action, { now, policy: business.policy, reason: req.reason });
+      const outcome = decideTransition(appt, action, { now, policy: policyFor(business, appt.snapshot.policyVersion), reason: req.reason });
       const from = appt.status;
       const updated: Appointment = { ...appt, status: outcome.to, version: appt.version + 1 };
       await this.repos.appointments.update(updated, appt.version);
@@ -283,7 +288,7 @@ export class AppointmentService {
           currentVersion: appt.version,
         });
       }
-      decideTransition(appt, 'reschedule', { now, policy: business.policy });
+      decideTransition(appt, 'reschedule', { now, policy: policyFor(business, appt.snapshot.policyVersion) });
       const professionalId = req.professionalId ?? appt.professionalId;
       if (professionalId !== appt.professionalId && !canCreateFor(actor, professionalId)) {
         throw new DomainError('FORBIDDEN', 'No puedes asignar la cita a ese profesional.');
@@ -489,7 +494,7 @@ export class AppointmentService {
     const status = this.effectiveStatus(a, now);
     const view = { ...a, status };
     const allowedActions = ACTIVE_STATUSES.has(status)
-      ? actionsAllowedByState(view, { now, policy: l.business.policy }).filter((act) => canActOn(actor, a, act))
+      ? actionsAllowedByState(view, { now, policy: policyFor(l.business, a.snapshot.policyVersion) }).filter((act) => canActOn(actor, a, act))
       : [];
     return {
       id: a.id,

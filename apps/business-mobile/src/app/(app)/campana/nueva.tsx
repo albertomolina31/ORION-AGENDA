@@ -170,7 +170,7 @@ export default function NewCampaign() {
           </View>
         ) : (
           <View style={{ gap: spacing.sm }}>
-            <Button
+            <Button requiresOnline
               label="Confirmar programación"
               icon={approved ? Check : Lock}
               disabled={!approved}
@@ -180,7 +180,7 @@ export default function NewCampaign() {
                     router.back();
                   }, onError: (e) => setMessage({ tone: 'warning', text: e.message }) }))}
             />
-            <Button label="Guardar borrador" variant="outline" loading={save.isPending} onPress={() => persist()} />
+            <Button requiresOnline label="Guardar borrador" variant="outline" loading={save.isPending} onPress={() => persist()} />
           </View>
         )
       }

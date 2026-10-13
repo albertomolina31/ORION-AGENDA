@@ -63,7 +63,7 @@ export function EmptyState({
 /** Error recuperable: explica qué pasó y permite reintentar sin perder contexto. */
 export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
   const e = error instanceof ApiError ? error : null;
-  const offline = e?.code === 'NETWORK' || e?.code === 'TIMEOUT';
+  const offline = e?.code === 'NETWORK' || e?.code === 'TIMEOUT' || e?.code === 'OFFLINE';
   const forbidden = e?.code === 'FORBIDDEN';
   return (
     <View style={styles.error} accessibilityRole="alert">

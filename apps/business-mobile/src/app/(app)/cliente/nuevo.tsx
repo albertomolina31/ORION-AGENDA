@@ -56,7 +56,7 @@ export default function NewCustomer() {
 
   const singular = m.vocabulary.customerSingular.toLowerCase();
   return (
-    <Screen header={<StackHeader title={`Nuevo ${singular}`} subtitle={m.businessName} />} footer={<Button label="Guardar" icon={Check} onPress={submit} loading={create.isPending} />}>
+    <Screen header={<StackHeader title={`Nuevo ${singular}`} subtitle={m.businessName} />} footer={<Button requiresOnline label="Guardar" icon={Check} onPress={submit} loading={create.isPending} />}>
       <View style={{ gap: spacing.lg }}>
         <Field label="Nombre completo" value={name} onChangeText={setName} autoCapitalize="words" error={errors.name?.[0]} />
         <Field label="Teléfono (WhatsApp)" value={phone} onChangeText={setPhone} keyboardType="phone-pad" error={errors.phone?.[0]} hint="10 dígitos. Un teléfono puede compartirse entre personas." />

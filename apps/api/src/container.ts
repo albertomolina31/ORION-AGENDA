@@ -2,7 +2,7 @@ import { AccessService } from './application/access-service.js';
 import { AppointmentService } from './application/appointment-service.js';
 import { BusinessService } from './application/business-service.js';
 import { CampaignService } from './application/campaign-service.js';
-import { ConfigService } from './application/config-service.js';
+import { BusinessSettingsService, ConfigService } from './application/config-service.js';
 import { CustomerService } from './application/customer-service.js';
 import { IdempotencyService } from './application/idempotency-service.js';
 import { LoyaltySimulation } from './application/loyalty-simulation.js';
@@ -31,6 +31,7 @@ export interface OrionContainer {
   loyalty: LoyaltySimulation;
   campaigns: CampaignService;
   config: ConfigService;
+  settings: BusinessSettingsService;
   notifications: NotificationService;
   outbox: OutboxDispatcher;
 }
@@ -59,6 +60,7 @@ export function createSimulationContainer(clock: Clock, ids: IdGenerator, seedAt
     loyalty,
     campaigns,
     config: new ConfigService(repos, clock, ids, idempotency),
+    settings: new BusinessSettingsService(repos, clock, idempotency, (a) => business.profile(a)),
     notifications: new NotificationService(repos, db, clock),
     outbox,
   };

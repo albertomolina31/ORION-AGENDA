@@ -185,10 +185,10 @@ export default function CampaignDetail() {
       {canManage ? (
         <View style={{ gap: spacing.sm }}>
           {c.status === 'DRAFT' ? <Button label="Continuar editando" onPress={() => router.replace(`/campana/nueva?id=${c.id}`)} /> : null}
-          {c.status === 'SCHEDULED' || c.status === 'SENDING' ? <Button label="Pausar" icon={Pause} variant="outline" loading={action.isPending} onPress={() => run('pause')} /> : null}
-          {c.status === 'PAUSED' ? <Button label="Reanudar" icon={Play} loading={action.isPending} onPress={() => run('resume')} /> : null}
+          {c.status === 'SCHEDULED' || c.status === 'SENDING' ? <Button requiresOnline label="Pausar" icon={Pause} variant="outline" loading={action.isPending} onPress={() => run('pause')} /> : null}
+          {c.status === 'PAUSED' ? <Button requiresOnline label="Reanudar" icon={Play} loading={action.isPending} onPress={() => run('resume')} /> : null}
           {['DRAFT', 'SCHEDULED', 'SENDING', 'PAUSED'].includes(c.status) ? (
-            <Button label="Cancelar campaña" icon={Ban} variant="destructive" disabled={action.isPending} onPress={() => run('cancel')} />
+            <Button requiresOnline label="Cancelar campaña" icon={Ban} variant="destructive" disabled={action.isPending} onPress={() => run('cancel')} />
           ) : null}
         </View>
       ) : (

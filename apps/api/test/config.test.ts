@@ -190,3 +190,56 @@ describe('Campañas (UI24)', () => {
     expect(p).toMatchObject({ matched: 2, eligible: 1 });
   });
 });
+
+describe('Reglas de reserva versionadas (L17)', () => {
+  const base = {
+    confirmationMode: 'MANUAL' as const,
+    slotGranularityMin: 15,
+    minLeadMin: 60,
+    maxHorizonDays: 60,
+    approvalWindowMin: 30,
+    customerCancelUntilMin: 120,
+    customerRescheduleUntilMin: 120,
+    noShowGraceMin: 15,
+  };
+
+  it('La vista previa lista cambios y advertencias sin aplicar nada', async () => {
+    const r = await c.settings.updatePolicy(owner, { requestId: req(), ...base, noShowGraceMin: 30, dryRun: true });
+    expect(r.applied).toBe(false);
+    expect(r.changes).toEqual([expect.objectContaining({ field: 'noShowGraceMin', from: '15 min', to: '30 min' })]);
+    // minLead (1 h) < cancelación (2 h): advertencia de la sección 24.
+    expect(r.warnings.some((w) => /no podrá cancelar/.test(w))).toBe(true);
+    expect((await c.business.profile(owner)).policy.version).toBe(1);
+  });
+
+  it('Las citas existentes conservan la política con la que se reservaron', async () => {
+    const appt = await c.appointments.create(owner, { requestId: req(), customerId: 'cus_008', serviceId: 'svc_corte_clasico', professionalId: 'pro_luis', startsAt: local(TOMORROW, '15:00') });
+    // Nueva versión con margen de ausencia de 60 min.
+    const r = await c.settings.updatePolicy(owner, { requestId: req(), ...base, noShowGraceMin: 60 });
+    expect(r).toMatchObject({ applied: true, policy: { version: 2 } });
+    expect(r.appointmentsKeepingPreviousVersion).toBeGreaterThan(0);
+    // La cita (v1) admite "No asistió" a los 15 min; una cita nueva (v2), hasta los 60.
+    clock.set(new Date(new Date(appt.startsAt).getTime() + 20 * 60_000));
+    const old = await c.appointments.get(owner, appt.id);
+    expect(old.policyVersion).toBe(1);
+    expect(old.allowedActions).toContain('no-show');
+    const history = await c.settings.policyHistory(owner);
+    expect(history.map((h) => h.version)).toEqual([2, 1]);
+  });
+
+  it('Sin cambios no crea versión; recepción no puede cambiar reglas', async () => {
+    await expect(c.settings.updatePolicy(owner, { requestId: req(), ...base })).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+    const rocio = await c.access.resolveActor('u_rocio', ORBITA, 'test');
+    await expect(c.settings.updatePolicy(rocio, { requestId: req(), ...base, noShowGraceMin: 30 })).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+
+  it('Perfil: cambiar categoría cambia el vocabulario; pausar reservas externas no suspende', async () => {
+    const p = await c.settings.updateProfile(owner, { requestId: req(), name: 'Estudio Órbita Centro', category: 'CLINIC', acceptingExternalBookings: false });
+    expect(p).toMatchObject({ name: 'Estudio Órbita Centro', status: 'ACTIVE', acceptingExternalBookings: false });
+    const me = await c.access.me('u_alberto');
+    expect(me.memberships.find((m) => m.businessId === ORBITA)!.vocabulary.customerPlural).toBe('Pacientes');
+    // La agenda interna sigue operando.
+    const appt = await c.appointments.create(owner, { requestId: req(), customerId: 'cus_008', serviceId: 'svc_corte_clasico', professionalId: 'pro_luis', startsAt: local(TOMORROW, '15:00') });
+    expect(appt.status).toBe('CONFIRMED');
+  });
+});

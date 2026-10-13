@@ -54,6 +54,14 @@ Faltan (opcional): Ori con megáfono (campañas), escenas horizontales de onboar
 - Agenda: filas compactas, línea de "ahora" y huecos "Sin citas · Agendar" al filtrar por profesional (el hueco no implica disponibilidad; "Agendar" consulta el motor real).
 - Poses de Ori en estados vacíos, errores, carga, login, campañas y fidelidad.
 
+## Hecho: animaciones tipo Duolingo (13-oct-2026, noche)
+
+- Ori respira y flota; al tocarlo hace *squash & stretch* y salta; al cambiar de pose entra con zoom.
+- Celebración: Ori salta dos veces, ráfaga radial de confeti (36 piezas) y título con zoom.
+- Anillo del día: pulso y destellos al completar todas las citas; Ori en pose de celebración en Inicio.
+- Errores: el campo con error y el toast de error se sacuden (con vibración); íconos y chips con rebote al aparecer o seleccionarse.
+- Botón 3D con profundidad y vibración; en modo sin conexión muestra "Sin conexión" y no se puede presionar.
+
 ## Siguientes ideas de diseño
 
 - Onboarding / alta guiada (UI03) con Ori paso a paso.

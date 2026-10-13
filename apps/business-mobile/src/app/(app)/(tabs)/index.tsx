@@ -85,7 +85,7 @@ export default function Inicio() {
                     </Text>
                   </View>
                 </View>
-                <Ori pose="wave" size={92} />
+                <Ori pose={ori.pose === 'celebrate' ? 'celebrate' : 'wave'} size={92} jump={ori.pose === 'celebrate' ? 'day-complete' : undefined} />
               </View>
               <View style={styles.oriBubble}>
                 <Text variant="captionStrong" color={colors.textOnNight}>

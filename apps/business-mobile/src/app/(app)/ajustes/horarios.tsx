@@ -120,7 +120,7 @@ export default function Schedules() {
         void blocks.refetch();
       }}
       refreshing={q.isRefetching}
-      footer={canEdit && dirty ? <Button label="Guardar horario" icon={Check} loading={checking || save.isPending} onPress={apply} /> : undefined}
+      footer={canEdit && dirty ? <Button requiresOnline label="Guardar horario" icon={Check} loading={checking || save.isPending} onPress={apply} /> : undefined}
     >
       {m.role !== 'PROFESSIONAL' ? (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>

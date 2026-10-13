@@ -8,6 +8,7 @@ import Svg, { Defs, LinearGradient, RadialGradient, Rect, Stop } from 'react-nat
 import { scheduleOnRN } from 'react-native-worklets';
 import { useNotifications } from '@/lib/queries';
 import { useSession } from '@/lib/session';
+import { OfflineBanner } from './OfflineBanner';
 import { Text } from './Text';
 import { colors, radius, spacing, touchTarget } from './theme';
 
@@ -43,6 +44,7 @@ export function Screen({
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       {tabTitle !== undefined ? <AppHeader title={tabTitle} scrollY={scrollY} /> : header}
+      <OfflineBanner />
       <Animated.ScrollView
         onScroll={onScroll}
         scrollEventThrottle={16}
