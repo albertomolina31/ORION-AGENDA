@@ -1,0 +1,36 @@
+{
+  "name": "@orion/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/main.js",
+    "dev": "tsc -p tsconfig.build.json && concurrently -k -n tsc,api \"tsc -p tsconfig.build.json --watch --preserveWatchOutput\" \"node --watch dist/main.js\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "openapi": "tsc -p tsconfig.build.json && node dist/openapi/generate.js"
+  },
+  "dependencies": {
+    "@nestjs/common": "^12.1.0",
+    "@nestjs/core": "^12.1.0",
+    "@nestjs/platform-express": "^12.1.0",
+    "@orion/contracts": "workspace:*",
+    "luxon": "^3.7.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.0",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "^12.1.0",
+    "@types/express": "^5.0.0",
+    "@types/luxon": "^3.7.0",
+    "@types/node": "^22.0.0",
+    "@types/supertest": "^7.0.0",
+    "concurrently": "^9.0.0",
+    "supertest": "^7.1.0",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.0"
+  }
+}

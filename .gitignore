@@ -1,0 +1,23 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.env
+.env*.local
+
+# Expo
+.expo/
+web-build/
+expo-env.d.ts
+.metro-health-check*
+/apps/business-mobile/ios
+/apps/business-mobile/android
+*.jks
+*.p8
+*.p12
+*.key
+*.pem
+*.mobileprovision
+
+.DS_Store
+npm-debug.*

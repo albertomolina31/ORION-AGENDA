@@ -1,0 +1,16 @@
+{
+  "name": "orion-business",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build:packages": "pnpm --filter @orion/design-tokens --filter @orion/contracts build",
+    "dev:api": "pnpm --filter @orion/api dev",
+    "dev:app": "pnpm --filter @orion/business-mobile start",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "openapi": "pnpm --filter @orion/api openapi"
+  }
+}
